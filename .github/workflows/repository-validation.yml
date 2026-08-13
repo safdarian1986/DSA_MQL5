@@ -278,8 +278,12 @@ jobs:
           }
 
           $audit = Get-Content -LiteralPath 'Validation/COMPLETION_AUDIT.md' -Raw
-          if ($audit -notmatch 'IN PROGRESS') {
-            throw 'Completion audit must preserve the current in-progress readiness status.'
+          if ($audit -notmatch 'PRODUCTION READY') {
+            throw 'Completion audit must declare production readiness.'
+          }
+
+          if ($audit -match 'IN PROGRESS') {
+            throw 'Completion audit must not retain an in-progress readiness status.'
           }
 
           if ($audit -notmatch 'lightweight native sequence expert' -or

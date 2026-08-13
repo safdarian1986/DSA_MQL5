@@ -71,7 +71,7 @@ void DSA_RunHistoryRevisionHarness()
 
    DSA_FillSyntheticHistory(time,open_values,high_values,low_values,close_values,tick_volume,spread);
    const int total = ArraySize(time);
-   const int revised_shift = 8;
+   const int revised_shift = 119;
 
    const double before_bar = DSA_BarRevisionFingerprint(revised_shift,total,time,open_values,high_values,low_values,close_values,tick_volume,spread);
    const string before_history = DSA_HistoryFingerprint(total,time,open_values,high_values,low_values,close_values,tick_volume,spread);

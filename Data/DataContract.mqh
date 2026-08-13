@@ -312,19 +312,20 @@ string DSA_HistoryFingerprint(const int rates_total,
                               const long &tick_volume[],
                               const int &spread[])
 {
-   if(rates_total <= 0)
+   if(rates_total <= 1)
       return "empty";
 
    const datetime oldest = time[rates_total - 1];
-   string fingerprint = StringFormat("bars=%d|oldest=%I64d",rates_total,(long)oldest);
-   int shifts[8] = {1,2,4,8,16,64,512,4096};
+   string fingerprint = StringFormat("oldest=%I64d",(long)oldest);
+   int oldest_offsets[8] = {0,1,2,4,8,16,64,512};
    for(int i = 0; i < 8; ++i)
    {
-      const int shift = shifts[i];
+      const int offset = oldest_offsets[i];
+      const int shift = rates_total - 1 - offset;
       if(shift > 0 && shift < rates_total)
       {
          const double bar_revision = DSA_BarRevisionFingerprint(shift,rates_total,time,open,high,low,close,tick_volume,spread);
-         fingerprint += StringFormat("|s%d=%I64d:%.0f",shift,(long)time[shift],bar_revision);
+         fingerprint += StringFormat("|o%d=%I64d:%.0f",offset,(long)time[shift],bar_revision);
       }
    }
    return fingerprint;

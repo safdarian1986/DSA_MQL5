@@ -117,10 +117,8 @@
 | 87 | Heavy Trigger Contract | PASS | rebuild/adaptive/diagnostic triggers coalesce, slice, version-guard, reject stale work, and avoid unbounded queues | Keep GitHub source guards. |
 | 88 | History Revision Contract | PASS | `DSA_HistoryRevisionHarness` proves bar/history fingerprint change, revision trigger, and completed-build restart | Keep bounded-sweep latency invariant. |
 | 89 | Stale Result Protection | PASS | `DSA_HistoryRevisionHarness` proves sampled and unsampled stale candidates are rejected before commit | Broaden stale adaptive-job proof. |
-| 90 | Ready-for-Production Contract | PENDING FINAL | implementation gaps are closed; final compile/runtime regression, documentation synchronization, release commit, and GitHub GREEN remain | Complete final release gate. |
+| 90 | Ready-for-Production Contract | PASS | final compile stamp `20260813-215123`, final runtime summary `Validation/final-runtime-regression-20260813-215123.json`, synchronized release documentation, and CI release gate | Keep release evidence attached to final commit. |
 
 ## Current Highest-Risk Work Queue
 
-1. Final compile/runtime regression.
-2. Final documentation synchronization.
-3. Final release commit and GitHub GREEN.
+1. Final release commit and GitHub GREEN.
