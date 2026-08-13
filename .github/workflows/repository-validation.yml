@@ -113,18 +113,20 @@ jobs:
           $mtfContract = Get-Content -LiteralPath 'Data/MTFAlignment.mqh' -Raw
           $featureEngine = Get-Content -LiteralPath 'Features/FeatureEngine.mqh' -Raw
           if ($mtfContract -notmatch 'DSA_GetPrimaryAnalysisSnapshot' -or
+              $mtfContract -notmatch 'DSA_ShouldRunMediumPath' -or
+              $mtfContract -notmatch 'DSA_IsAnalysisCommitHostBar' -or
               $featureEngine -notmatch 'primary_analysis_available' -or
               $featureEngine -notmatch 'DSA_GetPrimaryAnalysisSnapshot') {
-            throw 'Expected Analysis Timeframe to feed the primary feature path.'
+            throw 'Expected Analysis Timeframe to feed the primary feature path and Medium Path commit trigger.'
           }
 
           $prepareIndex = $indicatorHeader.IndexOf('DSA_PrepareBackgroundBuild(rates_total,history_fingerprint);')
-          $closedCommitIndex = $indicatorHeader.IndexOf('DSA_ProcessBar(1,rates_total,false,time,open,high,low,close,tick_volume,spread);')
+          $closedCommitIndex = $indicatorHeader.IndexOf('DSA_ProcessAnalysisCommitBar(1,rates_total,time,open,high,low,close,tick_volume,spread);')
           $liveIndex = $indicatorHeader.IndexOf('DSA_ProcessLivePath(rates_total,time,open,high,low,close,tick_volume,spread);')
           $sliceIndex = $indicatorHeader.IndexOf('DSA_ProcessHistoricalSlice(rates_total,time,open,high,low,close,tick_volume,spread);')
           if ($prepareIndex -lt 0 -or $closedCommitIndex -lt 0 -or $liveIndex -lt 0 -or $sliceIndex -lt 0 -or
               $prepareIndex -gt $closedCommitIndex -or $closedCommitIndex -gt $liveIndex -or $liveIndex -gt $sliceIndex) {
-            throw 'Expected OnCalculate to run lightweight build preparation, closed-bar commit, P0 live path, then historical background slices.'
+            throw 'Expected OnCalculate to run lightweight build preparation, Analysis Bar commit, P0 live path, then historical background slices.'
           }
 
           if ($indicatorHeader -notmatch 'DSA_RetainedOutputAvailable' -or

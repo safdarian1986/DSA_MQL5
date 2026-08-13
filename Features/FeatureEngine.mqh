@@ -148,11 +148,13 @@ void DSA_BuildFeatureSnapshot(const int index,
                               const double &slope_buffer[],
                               const double &volatility_buffer[],
                               const double &quality_buffer[],
-                              DSAFeatureSnapshot &feature)
+                              DSAFeatureSnapshot &feature,
+                              const bool analysis_bar_commit=false)
 {
    DSASelectionChannels channels;
    DSAMtfSnapshot primary_snapshot;
-   const bool use_primary_analysis = DSA_GetPrimaryAnalysisSnapshot(contract,time[index],live_bar,primary_snapshot);
+   const bool use_primary_analysis = DSA_GetPrimaryAnalysisSnapshot(contract,time[index],live_bar,
+                                                                   primary_snapshot,analysis_bar_commit);
    const double source_open = (use_primary_analysis ? primary_snapshot.open : open[index]);
    const double source_high = (use_primary_analysis ? primary_snapshot.high : high[index]);
    const double source_low = (use_primary_analysis ? primary_snapshot.low : low[index]);

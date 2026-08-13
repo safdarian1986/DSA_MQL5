@@ -7,6 +7,8 @@
 int HarnessFailures = 0;
 int Handle = INVALID_HANDLE;
 int Samples = 0;
+int CommitSamples = 0;
+int HoldSamples = 0;
 
 void DSA_RecordFailure(const string message)
 {
@@ -26,12 +28,32 @@ bool DSA_ReadIndicatorTarget(const int shift,double &target)
    return true;
 }
 
-bool DSA_ExpectedClosedAnalysisClose(const datetime host_time,double &expected)
+bool DSA_ExpectedAnalysisTarget(const int host_shift,double &expected,bool &commit_bar)
 {
+   commit_bar = false;
+   const datetime host_time = iTime(_Symbol,_Period,host_shift);
+   if(host_time <= 0)
+      return false;
+
    int analysis_shift = iBarShift(_Symbol,PERIOD_H1,host_time,false);
    if(analysis_shift < 0)
       return false;
-   ++analysis_shift;
+
+   if(host_shift > 0)
+   {
+      const datetime next_host_time = iTime(_Symbol,_Period,host_shift - 1);
+      const int next_analysis_shift = iBarShift(_Symbol,PERIOD_H1,next_host_time,false);
+      if(next_analysis_shift >= 0)
+      {
+         const datetime analysis_time = iTime(_Symbol,PERIOD_H1,analysis_shift);
+         const datetime next_analysis_time = iTime(_Symbol,PERIOD_H1,next_analysis_shift);
+         commit_bar = (analysis_time > 0 && next_analysis_time > 0 && analysis_time != next_analysis_time);
+      }
+   }
+
+   if(!commit_bar)
+      ++analysis_shift;
+
    expected = iClose(_Symbol,PERIOD_H1,analysis_shift);
    return (expected > 0.0 && MathIsValidNumber(expected));
 }
@@ -39,8 +61,8 @@ bool DSA_ExpectedClosedAnalysisClose(const datetime host_time,double &expected)
 void DSA_CheckPrimaryAnalysisTimeframe()
 {
    const int bars = Bars(_Symbol,_Period);
-   const int limit = MathMin(bars - 10,220);
-   for(int shift = 4; shift <= limit && Samples < 80; shift += 2)
+   const int limit = MathMin(bars - 10,260);
+   for(int shift = 4; shift <= limit && Samples < 120; ++shift)
    {
       const datetime host_time = iTime(_Symbol,_Period,shift);
       if(host_time <= 0)
@@ -51,7 +73,8 @@ void DSA_CheckPrimaryAnalysisTimeframe()
          continue;
 
       double expected = 0.0;
-      if(!DSA_ExpectedClosedAnalysisClose(host_time,expected))
+      bool commit_bar = false;
+      if(!DSA_ExpectedAnalysisTarget(shift,expected,commit_bar))
          continue;
 
       if(MathAbs(actual - expected) > MathMax(_Point * 0.5,1.0e-8))
@@ -65,6 +88,10 @@ void DSA_CheckPrimaryAnalysisTimeframe()
       }
 
       ++Samples;
+      if(commit_bar)
+         ++CommitSamples;
+      else
+         ++HoldSamples;
    }
 }
 
@@ -101,7 +128,7 @@ int OnInit()
 
 void OnTick()
 {
-   if(HarnessFailures == 0 && Samples < 80)
+   if(HarnessFailures == 0 && Samples < 120)
       DSA_CheckPrimaryAnalysisTimeframe();
 }
 
@@ -111,11 +138,16 @@ void OnDeinit(const int reason)
       IndicatorRelease(Handle);
 
    Print("DSA analysis-timeframe harness completed. failures=",HarnessFailures,
-         " samples=",Samples,
-         " reason=",reason);
+          " samples=",Samples,
+          " commit_samples=",CommitSamples,
+          " hold_samples=",HoldSamples,
+          " reason=",reason);
 }
 
 double OnTester()
 {
-   return (HarnessFailures == 0 && Samples >= 80 ? 1.0 : 0.0);
+   return (HarnessFailures == 0 &&
+           Samples >= 120 &&
+           CommitSamples >= 12 &&
+           HoldSamples >= 80 ? 1.0 : 0.0);
 }

@@ -15,7 +15,7 @@ This workspace contains a pure MQL5, non-trading MetaTrader 5 custom indicator i
 
 ## Implemented Source Structure
 
-- `DSA_MQL5_Native.mq5`: main custom indicator entrypoint with retained-output candidate rebuilds, stale-candidate rejection guard, closed-bar commit before Candle0 live mutation, and P0 Fast Path ordering before historical/adaptive background slices.
+- `DSA_MQL5_Native.mq5`: main custom indicator entrypoint with retained-output candidate rebuilds, stale-candidate rejection guard, New Analysis Bar commit before Candle0 live mutation, and P0 Fast Path ordering before historical/adaptive background slices.
 - `Core/`: common helpers and the 10-input contract.
 - `Runtime/`: runtime load, coalesced triggers, single-flight flags, stale-state guard, progressive build cursor, and rotating history-audit cursor.
 - `Data/`: independent Selection Data channel contract, auxiliary central series, data quality, per-bar revision fingerprinting, stable history checkpoints, causal MTF alignment, and Analysis Timeframe primary snapshots.
@@ -36,10 +36,10 @@ This workspace contains a pure MQL5, non-trading MetaTrader 5 custom indicator i
 
 ## Fresh Validation Evidence
 
-- Final indicator compile log for the latest independent pass: `compile-evidence-20260813-165613-final.log`.
+- Final indicator compile log for the latest independent pass: `compile-evidence-20260813-171623-final.log`.
 - Final indicator compile result: `0 errors, 0 warnings`.
-- Latest harness compile logs include `compile-evidence-20260813-165613-runtime-harness.log`, `compile-evidence-20260813-165613-deep-harness.log`, `compile-evidence-20260813-165613-chart-harness.log`, `compile-evidence-20260813-165613-mtf-harness.log`, `compile-evidence-20260813-165613-adversarial-harness.log`, `compile-evidence-20260813-165613-modes-harness.log`, `compile-evidence-20260813-165613-selection-harness.log`, and `compile-evidence-20260813-165613-analysis-timeframe-harness.log`; all report `0 errors, 0 warnings`.
-- Latest Strategy Tester evidence: `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`, run window `2026-08-13 16:57-17:00`.
+- Latest harness compile logs include `compile-evidence-20260813-171623-runtime-harness.log`, `compile-evidence-20260813-171623-deep-harness.log`, `compile-evidence-20260813-171623-chart-harness.log`, `compile-evidence-20260813-171623-mtf-harness.log`, `compile-evidence-20260813-171623-adversarial-harness.log`, `compile-evidence-20260813-171623-modes-harness.log`, `compile-evidence-20260813-171623-selection-harness.log`, and `compile-evidence-20260813-171623-analysis-timeframe-harness.log`; all report `0 errors, 0 warnings`.
+- Latest Strategy Tester evidence: `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`, run window `2026-08-13 17:17-17:20`.
 - Selection Data harness: `OnTester result 1`, `failures=0`, direct independent-channel contract checks passed.
 - Adversarial full-history / anti-repaint harness: `OnTester result 1`, `failures=0`, `deep_bars=8437`, `oldest_shift=8387`, `mid_shift=4193`, `anti_repaint=true`.
 - MTF causality harness: `OnTester result 1`, `failures=0`, `samples=234`.
@@ -47,7 +47,7 @@ This workspace contains a pure MQL5, non-trading MetaTrader 5 custom indicator i
 - Default runtime harness: `OnTester result 1`, `failures=0`, `11426 ticks`, `2879 bars generated`.
 - DeepLearning-mode fallback harness: `OnTester result 1`, `failures=0`.
 - Model-mode harness: `OnTester result 1`, `failures=0`, all six official modes attached and produced ordered bands/uncertainty.
-- Analysis Timeframe harness: `OnTester result 1`, `failures=0`, `samples=80`.
+- Analysis Timeframe harness: `OnTester result 1`, `failures=0`, `samples=120`, `commit_samples=30`, `hold_samples=90`.
 
 ## Remaining Limits
 
@@ -58,4 +58,4 @@ This workspace contains a pure MQL5, non-trading MetaTrader 5 custom indicator i
 
 ## Assessment
 
-The implementation is materially stronger after the adversarial audit, history-revision audit, independent Selection Data channel work, Fast Path priority ordering, Analysis Timeframe primary target routing, closed-bar-before-live commit ordering, and retained-output candidate rebuilds. It is still not production-ready because the lightweight Multi-Scale Sequence Expert, true Hybrid participation, New Analysis Bar commit sequencing, dedicated Closed/Live state objects, stale-candidate rejection proof, and other clause-level Catalog contracts still require completion and proof.
+The implementation is materially stronger after the adversarial audit, history-revision audit, independent Selection Data channel work, Fast Path priority ordering, Analysis Timeframe primary target routing, New Analysis Bar commit sequencing, and retained-output candidate rebuilds. It is still not production-ready because the lightweight Multi-Scale Sequence Expert, true Hybrid participation, dedicated Closed/Live state objects, display-state and revised-history runtime proof, and other clause-level Catalog contracts still require completion and proof.

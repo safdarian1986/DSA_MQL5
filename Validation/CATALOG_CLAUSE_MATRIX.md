@@ -5,7 +5,7 @@
 - Catalog: `Catalog/DSA_MQL5_EN.docx`, freshly extracted from OOXML.
 - Scientific reference: `Catalog/DataSience-en.docx`, treated as upstream objective, not a literal heavyweight implementation mandate.
 - Owner decision: Deep Learning and Hybrid are no longer permanent specification gaps. They must be implemented as lightweight, causal, MQL5-native multi-scale sequence behavior without conventional online neural training.
-- Current stage: independent Selection Data channels, Fast Path priority guard, Analysis Timeframe primary target path, closed-bar-before-live commit ordering, and retained-output candidate rebuild implemented and validated.
+- Current stage: independent Selection Data channels, Fast Path priority guard, Analysis Timeframe primary target path, New Analysis Bar commit sequencing, and retained-output candidate rebuild implemented and validated.
 
 ## DataScience Crosswalk
 
@@ -71,7 +71,7 @@
 | 41 | Phase 9 | PARTIAL | event engine basics | event taxonomy/finality proof incomplete. |
 | 42 | Phase 10 | PARTIAL | buffers/objects/runtime | station traceability and visual detail incomplete. |
 | 43 | Fast Path Every Tick | EXACT PASS | P0 `DSA_ProcessLivePath` runs before historical slices and adaptive jobs; CI guards call order | Keep invariant. |
-| 44 | Medium Path New Analysis Bar | PARTIAL | analysis-rate primary source exists; host new-bar still drives commit | Detect New Analysis Bar and bind closed-state commit to it. |
+| 44 | Medium Path New Analysis Bar | PASS | `DSA_ShouldRunMediumPath`, `DSA_IsAnalysisCommitHostBar`, Analysis Timeframe harness `commit_samples=30`, `hold_samples=90` | Keep analysis-boundary invariant. |
 | 45 | Slow Path Evidence-Driven | PARTIAL | adaptive/rebuild triggers and retained-output candidate buffers | Complete candidate lifecycle evidence. |
 | 46 | Slow Work Slicing | PARTIAL | budgeted slices can run against candidate buffers | Add stronger single-flight/candidate proof. |
 | 47 | Full Historical Pass | EXACT PASS | adversarial full-history harness | Keep invariant. |
@@ -113,7 +113,7 @@
 | 83 | Standard Station Contract | PARTIAL | station manifest metadata | Link station fields to execution/tests. |
 | 84 | State Mutation | PARTIAL | closed-bar commit is ordered before live mutation; buffers remain shared | Enforce full live/closed mutation permissions. |
 | 85 | Normal Tick Contract | PARTIAL | P0 live path precedes historical/adaptive background work | Complete dedicated live-state read/write permissions. |
-| 86 | New-Bar Tick Contract | PARTIAL | Analysis Timeframe target path exists; host new-bar still triggers commit | Implement Analysis Bar commit sequence. |
+| 86 | New-Bar Tick Contract | PARTIAL | New Analysis Bar detection drives P1 commit before live path | Add dedicated ClosedState/LiveState objects. |
 | 87 | Heavy Trigger Contract | PARTIAL | reason mask and slices | Add candidate job lifecycle. |
 | 88 | History Revision Contract | PARTIAL | revision detection plus retained-output candidate rebuild | Add explicit revised-history runtime proof. |
 | 89 | Stale Result Protection | PARTIAL | fingerprint/version checks plus stale-candidate rejection guard | Add explicit stale candidate runtime test. |
@@ -121,8 +121,7 @@
 
 ## Current Highest-Risk Work Queue
 
-1. New Analysis Bar commit sequence.
-2. Dedicated ClosedState / LiveState objects.
-3. Display-state and revised-history runtime proof.
-4. Full feature, volatility, regime, adaptive weights, latency-aware score.
-5. Lightweight Multi-Scale Sequence Expert and true Hybrid ensemble.
+1. Dedicated ClosedState / LiveState objects.
+2. Display-state and revised-history runtime proof.
+3. Full feature, volatility, regime, adaptive weights, latency-aware score.
+4. Lightweight Multi-Scale Sequence Expert and true Hybrid ensemble.

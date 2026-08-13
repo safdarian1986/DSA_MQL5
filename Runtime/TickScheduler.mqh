@@ -36,6 +36,7 @@ struct DSARuntimeSchedulerState
    double runtime_load;
    ulong last_tick_microseconds;
    datetime last_bar_time;
+   datetime last_analysis_bar_time;
    ENUM_DSA_STATUS status;
 };
 
@@ -60,6 +61,7 @@ void DSA_RuntimeInit(DSARuntimeSchedulerState &runtime)
    runtime.runtime_load = 0.0;
    runtime.last_tick_microseconds = 0;
    runtime.last_bar_time = 0;
+   runtime.last_analysis_bar_time = 0;
    runtime.status = DSA_STATUS_BUILDING;
 }
 

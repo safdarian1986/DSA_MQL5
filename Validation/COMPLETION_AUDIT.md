@@ -19,16 +19,17 @@
 
 | Requirement | Status | Evidence |
 | --- | --- | --- |
-| Indicator compiles from final source | PASS | `compile-evidence-20260813-165613-final.log`, `0 errors, 0 warnings` |
-| Harnesses compile | PASS | `compile-evidence-20260813-165613-*-harness.log`, all `0 errors, 0 warnings` |
+| Indicator compiles from final source | PASS | `compile-evidence-20260813-171623-final.log`, `0 errors, 0 warnings` |
+| Harnesses compile | PASS | `compile-evidence-20260813-171623-*-harness.log`, all `0 errors, 0 warnings` |
 | Pure MQL5 / no external dependencies | PASS | static source scan |
 | Non-trading behavior | PASS | static source scan |
 | Exactly 10 inputs | PASS | `DSA_MQL5_Native.mq5` |
 | No update-timing input | PASS | static source scan |
 | Independent Selection Data channels | EXACT PASS | `DSASelectionChannels`, `DSA_SelectionDataHarness`, `OnTester result 1` |
-| Fast Path priority | PASS | `OnCalculate` runs lightweight rebuild preparation, closed-bar commit when needed, P0 live path, then historical/adaptive background work; CI source-order guard added |
+| Fast Path priority | PASS | `OnCalculate` runs lightweight rebuild preparation, Analysis Bar commit when needed, P0 live path, then historical/adaptive background work; CI source-order guard added |
 | Analysis Timeframe primary path | PASS | `DSA_GetPrimaryAnalysisSnapshot`, primary feature target path, `DSA_AnalysisTimeframeHarness` |
-| Closed-bar before live mutation | PASS | new-bar closed bar 1 is processed before Candle0 live path; adversarial anti-repaint remains green |
+| New Analysis Bar commit sequence | PASS | `DSA_ShouldRunMediumPath`, `DSA_ProcessAnalysisCommitBar`, harness `commit_samples=30`, `hold_samples=90` |
+| Closed-bar before live mutation | PASS | Analysis Bar commit is processed before Candle0 live path; adversarial anti-repaint remains green |
 | Retained-output candidate rebuild | PASS | retained output stays visible while rebuild slices fill candidate buffers; stale candidate fingerprints are rejected before commit |
 | Full-history processing | PASS | `deep_bars=8437`, `oldest_shift=8387`, `mid_shift=4193` |
 | Closed-bar anti-repaint | PASS | captured closed bar stayed unchanged after two future bars |
@@ -42,7 +43,7 @@
 
 ## Runtime Evidence
 
-- Latest Strategy Tester run window: `2026-08-13 16:57-17:00` in `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`.
+- Latest Strategy Tester run window: `2026-08-13 17:17-17:20` in `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`.
 - Selection Data harness: `OnTester result 1`, `failures=0`, direct independent-channel contract checks passed.
 - Adversarial harness: `OnTester result 1`, `failures=0`, `deep_bars=8437`, `full_history=true`, `buffer_semantics=true`, `anti_repaint=true`.
 - MTF harness: `OnTester result 1`, `failures=0`, `samples=234`.
@@ -50,12 +51,12 @@
 - Runtime baseline: `OnTester result 1`, `failures=0`, `11426 ticks`, `2879 bars generated`.
 - DeepLearning-mode fallback: `OnTester result 1`, `failures=0`.
 - Model-mode harness: `OnTester result 1`, `failures=0`, all six modes true.
-- Analysis Timeframe harness: `OnTester result 1`, `failures=0`, `samples=80`.
+- Analysis Timeframe harness: `OnTester result 1`, `failures=0`, `samples=120`, `commit_samples=30`, `hold_samples=90`.
 
 ## Decision
 
 Readiness status: `IN PROGRESS`.
 
-The current workspace is compiled, non-trading, and substantially validated for the completed stages. It is not production-ready yet because the owner-resolved lightweight Multi-Scale Sequence Expert, true Hybrid ensemble, New Analysis Bar commit sequencing, dedicated Closed/Live state objects, stale-candidate rejection proof, and remaining clause-level Catalog contracts still require implementation and proof.
+The current workspace is compiled, non-trading, and substantially validated for the completed stages. It is not production-ready yet because the owner-resolved lightweight Multi-Scale Sequence Expert, true Hybrid ensemble, dedicated Closed/Live state objects, display-state and revised-history runtime proof, and remaining clause-level Catalog contracts still require implementation and proof.
 
 The history-revision audit is intentionally progressive: old closed bars are swept in bounded slices rather than by performing a full-history scan on every ordinary tick.

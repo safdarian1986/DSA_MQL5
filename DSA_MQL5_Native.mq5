@@ -454,14 +454,15 @@ void DSA_PrepareBackgroundBuild(const int rates_total,const string history_finge
 
 void DSA_ProcessBar(const int index,
                     const int rates_total,
-                     const bool live_bar,
+                    const bool live_bar,
                     const datetime &time[],
                     const double &open[],
                     const double &high[],
                     const double &low[],
                     const double &close[],
                     const long &tick_volume[],
-                    const int &spread[])
+                    const int &spread[],
+                    const bool analysis_bar_commit=false)
 {
    DSA_ProcessBarInto(index,rates_total,live_bar,time,open,high,low,close,tick_volume,spread,
                       BufferAdaptiveTrend,BufferSignal,BufferUpperBand,BufferLowerBand,
@@ -471,7 +472,7 @@ void DSA_ProcessBar(const int index,
                       CalcDrift,CalcVolatility,CalcSlope,CalcAbsoluteError,CalcCoverage,
                       CalcConformalRadius,CalcPacf,CalcSafeModeScore,CalcStressScore,
                       CalcForecastH2,CalcForecastH4,CalcForecastH8,CalcHorizonGrowth,
-                      CalcRidgeState,CalcBarFingerprint);
+                      CalcRidgeState,CalcBarFingerprint,analysis_bar_commit);
 }
 
 void DSA_ProcessBarInto(const int index,
@@ -513,7 +514,8 @@ void DSA_ProcessBarInto(const int index,
                         double &forecast_h8_buffer[],
                         double &horizon_growth_buffer[],
                         double &ridge_state_buffer[],
-                        double &bar_fingerprint_buffer[])
+                        double &bar_fingerprint_buffer[],
+                        const bool analysis_bar_commit=false)
 {
    DSAFeatureSnapshot feature;
    DSAModelSnapshot model;
@@ -522,7 +524,8 @@ void DSA_ProcessBarInto(const int index,
    DSAAdaptiveSnapshot adaptive;
 
    DSA_BuildFeatureSnapshot(index,rates_total,InputContract,time,open,high,low,close,tick_volume,spread,
-                            live_bar,target_buffer,trend_buffer,slope_buffer,volatility_buffer,quality_buffer,feature);
+                            live_bar,target_buffer,trend_buffer,slope_buffer,volatility_buffer,quality_buffer,
+                            feature,analysis_bar_commit);
 
    DSA_ComputeModels(index,rates_total,InputContract,feature,open,high,low,close,
                       target_buffer,trend_buffer,signal_buffer,
@@ -605,7 +608,8 @@ void DSA_ProcessCandidateBar(const int index,
                              const double &low[],
                              const double &close[],
                              const long &tick_volume[],
-                             const int &spread[])
+                             const int &spread[],
+                             const bool analysis_bar_commit=false)
 {
    DSA_ProcessBarInto(index,rates_total,false,time,open,high,low,close,tick_volume,spread,
                       CandidateBufferAdaptiveTrend,CandidateBufferSignal,
@@ -619,7 +623,75 @@ void DSA_ProcessCandidateBar(const int index,
                       CandidateCalcCoverage,CandidateCalcConformalRadius,CandidateCalcPacf,
                       CandidateCalcSafeModeScore,CandidateCalcStressScore,
                       CandidateCalcForecastH2,CandidateCalcForecastH4,CandidateCalcForecastH8,
-                      CandidateCalcHorizonGrowth,CandidateCalcRidgeState,CandidateCalcBarFingerprint);
+                      CandidateCalcHorizonGrowth,CandidateCalcRidgeState,CandidateCalcBarFingerprint,
+                      analysis_bar_commit);
+}
+
+void DSA_ProcessAnalysisCommitBar(const int index,
+                                  const int rates_total,
+                                  const datetime &time[],
+                                  const double &open[],
+                                  const double &high[],
+                                  const double &low[],
+                                  const double &close[],
+                                  const long &tick_volume[],
+                                  const int &spread[])
+{
+   DSA_ProcessBarInto(index,rates_total,false,time,open,high,low,close,tick_volume,spread,
+                      BufferAdaptiveTrend,BufferSignal,BufferUpperBand,BufferLowerBand,
+                      BufferUncertaintyUpper,BufferUncertaintyLower,BufferRegimeColor,
+                      BufferHistoricalUp,BufferHistoricalDown,BufferAuxiliaryEvent,
+                      CalcTarget,CalcForecast,CalcQuality,CalcModelScore,CalcDisagreement,
+                      CalcDrift,CalcVolatility,CalcSlope,CalcAbsoluteError,CalcCoverage,
+                      CalcConformalRadius,CalcPacf,CalcSafeModeScore,CalcStressScore,
+                      CalcForecastH2,CalcForecastH4,CalcForecastH8,CalcHorizonGrowth,
+                      CalcRidgeState,CalcBarFingerprint,true);
+}
+
+void DSA_HoldClosedAnalysisState(const int index,
+                                 const int rates_total,
+                                 const datetime &time[],
+                                 const double &open[],
+                                 const double &high[],
+                                 const double &low[],
+                                 const double &close[],
+                                 const long &tick_volume[],
+                                 const int &spread[])
+{
+   if(index < 1 || index + 1 >= rates_total)
+      return;
+
+   const int source = index + 1;
+   BufferAdaptiveTrend[index] = BufferAdaptiveTrend[source];
+   BufferSignal[index] = BufferSignal[source];
+   BufferUpperBand[index] = BufferUpperBand[source];
+   BufferLowerBand[index] = BufferLowerBand[source];
+   BufferUncertaintyUpper[index] = BufferUncertaintyUpper[source];
+   BufferUncertaintyLower[index] = BufferUncertaintyLower[source];
+   BufferRegimeColor[index] = BufferRegimeColor[source];
+   BufferHistoricalUp[index] = BufferHistoricalUp[source];
+   BufferHistoricalDown[index] = BufferHistoricalDown[source];
+   BufferAuxiliaryEvent[index] = BufferAuxiliaryEvent[source];
+   CalcTarget[index] = CalcTarget[source];
+   CalcForecast[index] = CalcForecast[source];
+   CalcQuality[index] = CalcQuality[source];
+   CalcModelScore[index] = CalcModelScore[source];
+   CalcDisagreement[index] = CalcDisagreement[source];
+   CalcDrift[index] = CalcDrift[source];
+   CalcVolatility[index] = CalcVolatility[source];
+   CalcSlope[index] = CalcSlope[source];
+   CalcAbsoluteError[index] = CalcAbsoluteError[source];
+   CalcCoverage[index] = CalcCoverage[source];
+   CalcConformalRadius[index] = CalcConformalRadius[source];
+   CalcPacf[index] = CalcPacf[source];
+   CalcSafeModeScore[index] = CalcSafeModeScore[source];
+   CalcStressScore[index] = CalcStressScore[source];
+   CalcForecastH2[index] = CalcForecastH2[source];
+   CalcForecastH4[index] = CalcForecastH4[source];
+   CalcForecastH8[index] = CalcForecastH8[source];
+   CalcHorizonGrowth[index] = CalcHorizonGrowth[source];
+   CalcRidgeState[index] = CalcRidgeState[source];
+   CalcBarFingerprint[index] = DSA_BarRevisionFingerprint(index,rates_total,time,open,high,low,close,tick_volume,spread);
 }
 
 void DSA_CommitCandidateBuffers(const int rates_total)
@@ -681,10 +753,11 @@ void DSA_ProcessHistoricalSlice(const int rates_total,
 
    while(cursor >= 1 && processed < budget)
    {
+      const bool analysis_commit_bar = DSA_IsAnalysisCommitHostBar(InputContract,cursor,rates_total,time);
       if(DSA_CandidateBuildActive)
-         DSA_ProcessCandidateBar(cursor,rates_total,time,open,high,low,close,tick_volume,spread);
+         DSA_ProcessCandidateBar(cursor,rates_total,time,open,high,low,close,tick_volume,spread,analysis_commit_bar);
       else
-         DSA_ProcessBar(cursor,rates_total,false,time,open,high,low,close,tick_volume,spread);
+         DSA_ProcessBar(cursor,rates_total,false,time,open,high,low,close,tick_volume,spread,analysis_commit_bar);
       --cursor;
       ++processed;
    }
@@ -848,11 +921,18 @@ int OnCalculate(const int rates_total,
       DSA_CoalesceTrigger(RuntimeState,DSA_REASON_HISTORY_REVISION);
 
    const bool new_bar = (RuntimeState.last_bar_time != 0 && RuntimeState.last_bar_time != time[0]);
+   const datetime current_analysis_bar_time = DSA_CurrentAnalysisBarTime(InputContract,time[0]);
+   const bool new_analysis_bar = (RuntimeState.last_analysis_bar_time != 0 &&
+                                  current_analysis_bar_time != 0 &&
+                                  RuntimeState.last_analysis_bar_time != current_analysis_bar_time);
+   const bool medium_path_due = DSA_ShouldRunMediumPath(InputContract,new_bar,new_analysis_bar);
 
    DSA_PrepareBackgroundBuild(rates_total,history_fingerprint);
 
-   if(new_bar && RuntimeState.build_complete && !RuntimeState.rebuild_pending)
-      DSA_ProcessBar(1,rates_total,false,time,open,high,low,close,tick_volume,spread);
+   if(medium_path_due && RuntimeState.build_complete && !RuntimeState.rebuild_pending)
+      DSA_ProcessAnalysisCommitBar(1,rates_total,time,open,high,low,close,tick_volume,spread);
+   else if(new_bar && DSA_UseAnalysisRate(InputContract) && RuntimeState.build_complete && !RuntimeState.rebuild_pending)
+      DSA_HoldClosedAnalysisState(1,rates_total,time,open,high,low,close,tick_volume,spread);
 
    DSA_ProcessLivePath(rates_total,time,open,high,low,close,tick_volume,spread);
 
@@ -867,6 +947,8 @@ int OnCalculate(const int rates_total,
                                   CalcModelScore,CalcDisagreement,CalcStressScore);
 
    RuntimeState.last_bar_time = time[0];
+   if(current_analysis_bar_time != 0)
+      RuntimeState.last_analysis_bar_time = current_analysis_bar_time;
 
    DSA_RuntimeEndTick(RuntimeState,started);
    return rates_total;
