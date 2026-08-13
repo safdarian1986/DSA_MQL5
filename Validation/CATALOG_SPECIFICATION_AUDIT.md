@@ -39,6 +39,7 @@
 | Fast Path priority | PASS | `OnCalculate` runs lightweight rebuild preparation, P0 live path, then historical/adaptive background work |
 | Closed historical anti-repaint | PASS | adversarial harness captured closed bar and compared after future bars |
 | MTF leakage guard | PASS | `Data/MTFAlignment.mqh`, MTF harness `samples=234` |
+| Analysis Timeframe primary path | PASS | `DSA_GetPrimaryAnalysisSnapshot`, `primary_analysis_available`, Analysis Timeframe harness |
 | Naive / Holt / Kalman | PASS | `Models/ModelBank.mqh` |
 | AR-Ridge | PASS | causal bounded ridge solve; Fast Path holds prior ridge state |
 | Adaptive ensemble | PASS | mode and maturity weights in `DSA_ComputeModels` |
@@ -55,12 +56,13 @@
 
 ## Fresh Evidence
 
-- Final compile: `compile-evidence-20260813-154521-final.log`, `0 errors, 0 warnings`.
-- Harness compiles: `compile-evidence-20260813-154521-*-harness.log`, all `0 errors, 0 warnings`.
-- Latest Strategy Tester run window: `2026-08-13 15:51-15:55` in `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`.
+- Final compile: `compile-evidence-20260813-161100-final.log`, `0 errors, 0 warnings`.
+- Harness compiles: `compile-evidence-20260813-161100-*-harness.log`, all `0 errors, 0 warnings`.
+- Latest Strategy Tester run window: `2026-08-13 16:12-16:15` in `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`.
 - Selection Data runtime: `OnTester result 1`, `failures=0`, independent O/H/L/C, H/L, and O/C contract validated.
 - Adversarial full-history and anti-repaint runtime: `OnTester result 1`, `failures=0`, `deep_bars=8437`.
 - MTF causality runtime: `OnTester result 1`, `failures=0`, `samples=234`.
+- Analysis Timeframe runtime: `OnTester result 1`, `failures=0`, `samples=80`.
 - Future object semantic runtime: `OnTester result 1`, `failures=0`, `count=121`.
 - Model mode runtime: `OnTester result 1`, all six official modes true.
 

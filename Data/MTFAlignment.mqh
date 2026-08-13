@@ -6,6 +6,7 @@
 struct DSAMtfSnapshot
 {
    bool available;
+   bool live;
    datetime source_time;
    double open;
    double high;
@@ -18,6 +19,7 @@ struct DSAMtfSnapshot
 void DSA_ResetMtfSnapshot(DSAMtfSnapshot &snapshot)
 {
    snapshot.available = false;
+   snapshot.live = false;
    snapshot.source_time = 0;
    snapshot.open = 0.0;
    snapshot.high = 0.0;
@@ -27,19 +29,29 @@ void DSA_ResetMtfSnapshot(DSAMtfSnapshot &snapshot)
    snapshot.spread = 0;
 }
 
-bool DSA_GetCausalAnalysisRate(DSAInputContract &contract,const datetime host_time,DSAMtfSnapshot &snapshot)
+int DSA_CausalAnalysisShift(DSAInputContract &contract,const datetime host_time,const bool live_bar)
 {
-   DSA_ResetMtfSnapshot(snapshot);
-
    if(contract.analysis_timeframe == contract.chart_timeframe || contract.analysis_timeframe == PERIOD_CURRENT)
-      return false;
+      return -1;
 
    ResetLastError();
    int shift = iBarShift(contract.symbol,contract.analysis_timeframe,host_time,false);
    if(shift < 0)
-      return false;
+      return -1;
 
-   shift++;
+   if(!live_bar)
+      shift++;
+   return shift;
+}
+
+bool DSA_LoadAnalysisSnapshot(DSAInputContract &contract,
+                              const int shift,
+                              const bool live_bar,
+                              DSAMtfSnapshot &snapshot)
+{
+   DSA_ResetMtfSnapshot(snapshot);
+   if(shift < 0)
+      return false;
 
    MqlRates rates[];
    ArraySetAsSeries(rates,true);
@@ -48,6 +60,7 @@ bool DSA_GetCausalAnalysisRate(DSAInputContract &contract,const datetime host_ti
       return false;
 
    snapshot.available = true;
+   snapshot.live = live_bar;
    snapshot.source_time = rates[0].time;
    snapshot.open = rates[0].open;
    snapshot.high = rates[0].high;
@@ -56,6 +69,17 @@ bool DSA_GetCausalAnalysisRate(DSAInputContract &contract,const datetime host_ti
    snapshot.tick_volume = rates[0].tick_volume;
    snapshot.spread = rates[0].spread;
    return true;
+}
+
+bool DSA_GetCausalAnalysisRate(DSAInputContract &contract,
+                               const datetime host_time,
+                               DSAMtfSnapshot &snapshot,
+                               const bool live_bar=false)
+{
+   return DSA_LoadAnalysisSnapshot(contract,
+                                   DSA_CausalAnalysisShift(contract,host_time,live_bar),
+                                   live_bar,
+                                   snapshot);
 }
 
 double DSA_MtfTarget(DSAMtfSnapshot &snapshot,const ENUM_DSA_SELECTION_DATA selection_data)
@@ -71,6 +95,26 @@ double DSA_MtfTarget(DSAMtfSnapshot &snapshot,const ENUM_DSA_SELECTION_DATA sele
                                         snapshot.close,
                                         channels);
    return channels.central;
+}
+
+bool DSA_UseAnalysisRate(DSAInputContract &contract)
+{
+   return (contract.analysis_timeframe != contract.chart_timeframe &&
+           contract.analysis_timeframe != PERIOD_CURRENT);
+}
+
+bool DSA_GetPrimaryAnalysisSnapshot(DSAInputContract &contract,
+                                    const datetime host_time,
+                                    const bool live_bar,
+                                    DSAMtfSnapshot &snapshot)
+{
+   if(!DSA_UseAnalysisRate(contract))
+   {
+      DSA_ResetMtfSnapshot(snapshot);
+      return false;
+   }
+
+   return DSA_GetCausalAnalysisRate(contract,host_time,snapshot,live_bar);
 }
 
 #endif

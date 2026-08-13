@@ -5,13 +5,13 @@
 - Catalog: `Catalog/DSA_MQL5_EN.docx`, freshly extracted from OOXML.
 - Scientific reference: `Catalog/DataSience-en.docx`, treated as upstream objective, not a literal heavyweight implementation mandate.
 - Owner decision: Deep Learning and Hybrid are no longer permanent specification gaps. They must be implemented as lightweight, causal, MQL5-native multi-scale sequence behavior without conventional online neural training.
-- Current stage: independent Selection Data channels and Fast Path priority guard implemented and validated.
+- Current stage: independent Selection Data channels, Fast Path priority guard, and Analysis Timeframe primary target path implemented and validated.
 
 ## DataScience Crosswalk
 
 | DataSience-en objective | DSA-MQL5 equivalent | Current status | Evidence / gap |
 | --- | --- | --- | --- |
-| Data ingestion | MT5 market data, OHLCV/spread, selected symbol/timeframe | PARTIAL | Host chart data is used; Analysis Timeframe is not yet the primary pipeline. |
+| Data ingestion | MT5 market data, OHLCV/spread, selected symbol/timeframe | PARTIAL | Analysis Timeframe can now feed the primary target path; full analysis-bar state lifecycle remains pending. |
 | Quality assessment | data quality score, gap/time penalties, anomaly inputs | PARTIAL | `DSA_DataQualityScore`; broader cleaning dimensions remain incomplete. |
 | Pattern discovery | trend, volatility, ACF/PACF, cycle, structure, regime | PARTIAL | Implemented in feature/model layers, but several evidence families are simplified. |
 | Feature engineering | causal feature snapshot and selected channel contract | PARTIAL | Selection Data is now exact; full feature family matrix remains incomplete. |
@@ -55,12 +55,12 @@
 | 25 | Regime Engine | PARTIAL | six regimes returned | Add CUSUM, residual, structure, volume shock evidence. |
 | 26 | Model Mode | PARTIAL | all six attach | Deep/Hybrid semantics incomplete. |
 | 27 | Feature Engine | PARTIAL | many causal features | Complete required families and tests. |
-| 28 | Multi-Timeframe Leakage Guard | PARTIAL | MTF harness passes | Analysis Timeframe is not yet primary pipeline. |
+| 28 | Multi-Timeframe Leakage Guard | EXACT PASS | MTF causality harness and primary Analysis Timeframe harness | Keep closed higher-TF candles causal. |
 | 29 | Main Formula Catalog | PARTIAL | formulas exist in modules | Complete missing formulas and traceability. |
 | 30 | Main Algorithm Catalog | PARTIAL | algorithms exist in modules | Complete sequence/adaptation/approval algorithms. |
 | 31 | 10-Phase System Map | PARTIAL | station manifest exists | Bind stations to actual execution evidence. |
 | 32 | Station 00 Runtime Foundation | PARTIAL | runtime scheduler state | Complete context/state registry semantics. |
-| 33 | Phase 1 | PARTIAL | input/data contract | Analysis Timeframe primary execution pending. |
+| 33 | Phase 1 | PARTIAL | input/data contract plus analysis-rate primary snapshot | Complete analysis-bar state lifecycle. |
 | 34 | Phase 2 | PARTIAL | quality score | cleaning/outlier dimensions incomplete. |
 | 35 | Phase 3 | PARTIAL | features implemented | feature family expansion pending. |
 | 36 | Phase 4 | PARTIAL | ACF/PACF/cycle/structure | reliability and reranking incomplete. |
@@ -71,7 +71,7 @@
 | 41 | Phase 9 | PARTIAL | event engine basics | event taxonomy/finality proof incomplete. |
 | 42 | Phase 10 | PARTIAL | buffers/objects/runtime | station traceability and visual detail incomplete. |
 | 43 | Fast Path Every Tick | EXACT PASS | P0 `DSA_ProcessLivePath` runs before historical slices and adaptive jobs; CI guards call order | Keep invariant. |
-| 44 | Medium Path New Analysis Bar | MISMATCH | host-chart new-bar drives commit | Detect new Analysis Bar explicitly. |
+| 44 | Medium Path New Analysis Bar | PARTIAL | analysis-rate primary source exists; host new-bar still drives commit | Detect New Analysis Bar and bind closed-state commit to it. |
 | 45 | Slow Path Evidence-Driven | PARTIAL | adaptive/rebuild triggers | Complete candidate lifecycle. |
 | 46 | Slow Work Slicing | PARTIAL | budgeted slices | Add stronger single-flight/candidate proof. |
 | 47 | Full Historical Pass | EXACT PASS | adversarial full-history harness | Keep invariant. |
@@ -113,7 +113,7 @@
 | 83 | Standard Station Contract | PARTIAL | station manifest metadata | Link station fields to execution/tests. |
 | 84 | State Mutation | PARTIAL | buffers mutate in processing | Enforce live/closed mutation permissions. |
 | 85 | Normal Tick Contract | PARTIAL | P0 live path precedes historical/adaptive background work | Complete Closed/Live mutation permissions. |
-| 86 | New-Bar Tick Contract | MISMATCH | host new-bar only | Implement Analysis Bar commit sequence. |
+| 86 | New-Bar Tick Contract | PARTIAL | Analysis Timeframe target path exists; host new-bar still triggers commit | Implement Analysis Bar commit sequence. |
 | 87 | Heavy Trigger Contract | PARTIAL | reason mask and slices | Add candidate job lifecycle. |
 | 88 | History Revision Contract | PARTIAL | revision detection plus retained-output reset guard | Preserve previous output fully until candidate commit. |
 | 89 | Stale Result Protection | PARTIAL | fingerprint/version checks plus guarded rebuild start | Add explicit stale candidate rejection tests. |
@@ -121,8 +121,8 @@
 
 ## Current Highest-Risk Work Queue
 
-1. Analysis Timeframe as the real primary analytical timeframe.
-2. ClosedState / LiveState isolation.
-3. Previous-output hold and candidate/atomic commit.
+1. ClosedState / LiveState isolation.
+2. Previous-output hold and candidate/atomic commit.
+3. New Analysis Bar commit sequence.
 4. Full feature, volatility, regime, adaptive weights, latency-aware score.
 5. Lightweight Multi-Scale Sequence Expert and true Hybrid ensemble.

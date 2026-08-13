@@ -48,6 +48,7 @@ jobs:
             'Validation/DSA_ChartObjectHarness.mq5',
             'Validation/DSA_ModelModeHarness.mq5',
             'Validation/DSA_SelectionDataHarness.mq5',
+            'Validation/DSA_AnalysisTimeframeHarness.mq5',
             'Validation/DSA_RuntimeHarness.mq5',
             'Validation/DSA_DeepLearningHarness.mq5',
             'Validation/RuntimeTesterAdversarial.ini',
@@ -55,6 +56,7 @@ jobs:
             'Validation/RuntimeTesterChart.ini',
             'Validation/RuntimeTesterModes.ini',
             'Validation/RuntimeTesterSelection.ini',
+            'Validation/RuntimeTesterAnalysisTimeframe.ini',
             'Validation/RuntimeTester.ini',
             'Validation/RuntimeTesterDeep.ini'
           )
@@ -108,6 +110,14 @@ jobs:
             throw 'Expected independent selection-channel contract support.'
           }
 
+          $mtfContract = Get-Content -LiteralPath 'Data/MTFAlignment.mqh' -Raw
+          $featureEngine = Get-Content -LiteralPath 'Features/FeatureEngine.mqh' -Raw
+          if ($mtfContract -notmatch 'DSA_GetPrimaryAnalysisSnapshot' -or
+              $featureEngine -notmatch 'primary_analysis_available' -or
+              $featureEngine -notmatch 'DSA_GetPrimaryAnalysisSnapshot') {
+            throw 'Expected Analysis Timeframe to feed the primary feature path.'
+          }
+
           $prepareIndex = $indicatorHeader.IndexOf('DSA_PrepareBackgroundBuild(rates_total,history_fingerprint);')
           $liveIndex = $indicatorHeader.IndexOf('DSA_ProcessLivePath(rates_total,time,open,high,low,close,tick_volume,spread);')
           $sliceIndex = $indicatorHeader.IndexOf('DSA_ProcessHistoricalSlice(rates_total,time,open,high,low,close,tick_volume,spread);')
@@ -152,8 +162,8 @@ jobs:
           }
 
           $compileLogs = Get-ChildItem -File -Filter 'compile-evidence-*.log'
-          if ($compileLogs.Count -lt 8) {
-            throw "Expected at least 8 retained compile evidence logs, found $($compileLogs.Count)"
+          if ($compileLogs.Count -lt 9) {
+            throw "Expected at least 9 retained compile evidence logs, found $($compileLogs.Count)"
           }
 
           foreach ($log in $compileLogs) {
@@ -170,6 +180,7 @@ jobs:
 
           if ($audit -notmatch 'lightweight native sequence expert' -or
               $audit -notmatch 'Independent Selection Data channels' -or
-              $audit -notmatch 'Fast Path priority') {
-            throw 'Completion audit must preserve the owner-resolved Deep/Hybrid roadmap, Selection Data, and Fast Path status.'
+              $audit -notmatch 'Fast Path priority' -or
+              $audit -notmatch 'Analysis Timeframe primary path') {
+            throw 'Completion audit must preserve the owner-resolved Deep/Hybrid roadmap, Selection Data, Fast Path, and Analysis Timeframe status.'
           }

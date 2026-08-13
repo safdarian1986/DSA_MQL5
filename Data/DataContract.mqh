@@ -190,6 +190,31 @@ double DSA_TimeGapPenalty(const int index,
    return DSA_Clamp(100.0 * DSA_SafeDiv((double)(actual - expected),(double)MathMax(expected,1),0.0),0.0,40.0);
 }
 
+double DSA_OhlcvQualityScore(const double open_value,
+                             const double high_value,
+                             const double low_value,
+                             const double close_value,
+                             const long tick_volume_value,
+                             const int spread_value)
+{
+   double score = 100.0;
+
+   if(!MathIsValidNumber(open_value) || !MathIsValidNumber(high_value) ||
+      !MathIsValidNumber(low_value) || !MathIsValidNumber(close_value))
+      score -= 50.0;
+
+   if(high_value < low_value)
+      score -= 35.0;
+   if(open_value <= 0.0 || high_value <= 0.0 || low_value <= 0.0 || close_value <= 0.0)
+      score -= 20.0;
+   if(tick_volume_value < 0)
+      score -= 10.0;
+   if(spread_value < 0)
+      score -= 5.0;
+
+   return DSA_Clamp(score,0.0,100.0);
+}
+
 double DSA_DataQualityScore(const int index,
                             const int rates_total,
                             const datetime &time[],
@@ -201,21 +226,8 @@ double DSA_DataQualityScore(const int index,
                             const int &spread[],
                             const ENUM_TIMEFRAMES timeframe)
 {
-   double score = 100.0;
-
-   if(!MathIsValidNumber(open[index]) || !MathIsValidNumber(high[index]) ||
-      !MathIsValidNumber(low[index]) || !MathIsValidNumber(close[index]))
-      score -= 50.0;
-
-   if(high[index] < low[index])
-      score -= 35.0;
-   if(open[index] <= 0.0 || high[index] <= 0.0 || low[index] <= 0.0 || close[index] <= 0.0)
-      score -= 20.0;
-   if(tick_volume[index] < 0)
-      score -= 10.0;
-   if(spread[index] < 0)
-      score -= 5.0;
-
+   double score = DSA_OhlcvQualityScore(open[index],high[index],low[index],close[index],
+                                        tick_volume[index],spread[index]);
    score -= DSA_TimeGapPenalty(index,rates_total,time,timeframe);
    return DSA_Clamp(score,0.0,100.0);
 }

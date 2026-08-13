@@ -146,9 +146,13 @@ double DSA_RidgeForecast(const int index,
       const double y3 = target_buffer[origin + 2];
       const double y4 = target_buffer[origin + 3];
       double x[5];
-      DSASelectionChannels origin_channels;
-      DSA_BuildSelectionChannels(origin,contract.selection_data,open,high,low,close,origin_channels);
-      const double origin_channel_signal = (origin_channels.channel_count > 1 ? origin_channels.direction : 0.0);
+      double origin_channel_signal = 0.0;
+      if(!DSA_UseAnalysisRate(contract))
+      {
+         DSASelectionChannels origin_channels;
+         DSA_BuildSelectionChannels(origin,contract.selection_data,open,high,low,close,origin_channels);
+         origin_channel_signal = (origin_channels.channel_count > 1 ? origin_channels.direction : 0.0);
+      }
       x[0] = 1.0;
       x[1] = y1;
       x[2] = y2;

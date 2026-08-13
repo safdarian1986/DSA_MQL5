@@ -39,6 +39,9 @@ struct DSAFeatureSnapshot
    bool mtf_available;
    bool multi_channel;
    int selected_channel_count;
+   bool primary_analysis_available;
+   bool primary_analysis_live;
+   datetime primary_analysis_time;
    int maturity;
 };
 
@@ -139,6 +142,7 @@ void DSA_BuildFeatureSnapshot(const int index,
                               const double &close[],
                               const long &tick_volume[],
                               const int &spread[],
+                              const bool live_bar,
                               const double &target_buffer[],
                               const double &trend_buffer[],
                               const double &slope_buffer[],
@@ -147,7 +151,22 @@ void DSA_BuildFeatureSnapshot(const int index,
                               DSAFeatureSnapshot &feature)
 {
    DSASelectionChannels channels;
-   DSA_BuildSelectionChannels(index,contract.selection_data,open,high,low,close,channels);
+   DSAMtfSnapshot primary_snapshot;
+   const bool use_primary_analysis = DSA_GetPrimaryAnalysisSnapshot(contract,time[index],live_bar,primary_snapshot);
+   const double source_open = (use_primary_analysis ? primary_snapshot.open : open[index]);
+   const double source_high = (use_primary_analysis ? primary_snapshot.high : high[index]);
+   const double source_low = (use_primary_analysis ? primary_snapshot.low : low[index]);
+   const double source_close = (use_primary_analysis ? primary_snapshot.close : close[index]);
+   const long source_tick_volume = (use_primary_analysis ? primary_snapshot.tick_volume : tick_volume[index]);
+   const int source_spread = (use_primary_analysis ? primary_snapshot.spread : spread[index]);
+   const ENUM_TIMEFRAMES source_timeframe = (use_primary_analysis ? contract.analysis_timeframe : contract.chart_timeframe);
+
+   DSA_BuildSelectionChannelsFromValues(contract.selection_data,
+                                        source_open,
+                                        source_high,
+                                        source_low,
+                                        source_close,
+                                        channels);
 
    feature.target = channels.central;
    feature.source_open = channels.open_value;
@@ -160,12 +179,15 @@ void DSA_BuildFeatureSnapshot(const int index,
    feature.selected_direction = channels.direction;
    feature.selected_channel_count = channels.channel_count;
    feature.multi_channel = (channels.channel_count > 1);
-   feature.ohlc_average = DSA_OHLCAverage(index,open,high,low,close);
-   feature.median_price = DSA_MedianPrice(index,high,low);
-   feature.oc_midpoint = DSA_OpenCloseMidpoint(index,open,close);
-   feature.candle_range = MathMax(high[index] - low[index],_Point);
-   feature.candle_body = MathAbs(close[index] - open[index]);
-   feature.close_location = DSA_SafeDiv(close[index] - low[index],feature.candle_range,0.5);
+   feature.primary_analysis_available = use_primary_analysis;
+   feature.primary_analysis_live = (use_primary_analysis && primary_snapshot.live);
+   feature.primary_analysis_time = (use_primary_analysis ? primary_snapshot.source_time : time[index]);
+   feature.ohlc_average = 0.25 * (source_open + source_high + source_low + source_close);
+   feature.median_price = 0.5 * (source_high + source_low);
+   feature.oc_midpoint = 0.5 * (source_open + source_close);
+   feature.candle_range = MathMax(source_high - source_low,_Point);
+   feature.candle_body = MathAbs(source_close - source_open);
+   feature.close_location = DSA_SafeDiv(source_close - source_low,feature.candle_range,0.5);
 
    double previous_target = feature.target;
    if(index + 1 < rates_total && DSA_HasValue(target_buffer[index + 1]))
@@ -175,8 +197,12 @@ void DSA_BuildFeatureSnapshot(const int index,
 
    feature.log_return = DSA_LogReturn(feature.target,previous_target);
    feature.absolute_return = MathAbs(feature.target - previous_target);
-   feature.gap = (index + 1 < rates_total ? MathAbs(open[index] - close[index + 1]) : 0.0);
-   feature.quality_score = DSA_DataQualityScore(index,rates_total,time,open,high,low,close,tick_volume,spread,contract.chart_timeframe);
+   feature.gap = (index + 1 < rates_total ? MathAbs(source_open - previous_target) : 0.0);
+   feature.quality_score = DSA_OhlcvQualityScore(source_open,source_high,source_low,source_close,
+                                                 source_tick_volume,source_spread);
+   if(!use_primary_analysis)
+      feature.quality_score -= DSA_TimeGapPenalty(index,rates_total,time,source_timeframe);
+   feature.quality_score = DSA_Clamp(feature.quality_score,0.0,100.0);
 
    double previous_volatility = feature.candle_range;
    if(index + 1 < rates_total && DSA_HasValue(volatility_buffer[index + 1]))
@@ -196,7 +222,7 @@ void DSA_BuildFeatureSnapshot(const int index,
    const double previous_trend = (index + 1 < rates_total && DSA_HasValue(trend_buffer[index + 1]) ? trend_buffer[index + 1] : previous_target);
    feature.robust_z = DSA_SafeDiv(feature.target - previous_trend,MathMax(feature.volatility,_Point),0.0);
    feature.persistence = (feature.slope == 0.0 ? 0.0 : DSA_Clamp(MathAbs(feature.slope) / MathMax(feature.volatility,_Point),0.0,3.0) / 3.0);
-   feature.range_efficiency = DSA_Clamp(DSA_SafeDiv(MathAbs(close[index] - open[index]),feature.candle_range,0.0),0.0,1.0);
+   feature.range_efficiency = DSA_Clamp(DSA_SafeDiv(MathAbs(source_close - source_open),feature.candle_range,0.0),0.0,1.0);
    if(feature.multi_channel && feature.selected_spread > _Point)
    {
       const double channel_efficiency = DSA_Clamp(DSA_SafeDiv(MathAbs(feature.selected_direction),
@@ -219,7 +245,13 @@ void DSA_BuildFeatureSnapshot(const int index,
    feature.mtf_deviation = 0.0;
 
    DSAMtfSnapshot mtf_snapshot;
-   if(DSA_GetCausalAnalysisRate(contract,time[index],mtf_snapshot))
+   if(use_primary_analysis)
+   {
+      feature.mtf_available = true;
+      feature.mtf_target = feature.target;
+      feature.mtf_deviation = 0.0;
+   }
+   else if(DSA_GetCausalAnalysisRate(contract,time[index],mtf_snapshot))
    {
       feature.mtf_available = true;
       feature.mtf_target = DSA_MtfTarget(mtf_snapshot,contract.selection_data);

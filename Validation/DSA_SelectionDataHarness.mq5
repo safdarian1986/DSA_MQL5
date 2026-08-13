@@ -141,7 +141,7 @@ void DSA_CheckFeatureSnapshot()
 
    DSAFeatureSnapshot feature;
    DSA_BuildFeatureSnapshot(0,total,contract,time,open_values,high_values,low_values,close_values,
-                            tick_volume,spread,target_buffer,trend_buffer,slope_buffer,
+                            tick_volume,spread,true,target_buffer,trend_buffer,slope_buffer,
                             volatility_buffer,quality_buffer,feature);
 
    if(!feature.multi_channel || feature.selected_channel_count != 4)
@@ -168,7 +168,7 @@ void DSA_CheckFeatureSnapshot()
                           true,
                           DSA_VISUAL_FULL);
    DSA_BuildFeatureSnapshot(0,total,contract,time,open_values,high_values,low_values,close_values,
-                            tick_volume,spread,target_buffer,trend_buffer,slope_buffer,
+                            tick_volume,spread,true,target_buffer,trend_buffer,slope_buffer,
                             volatility_buffer,quality_buffer,feature);
    if(!feature.multi_channel || feature.selected_channel_count != 2 ||
       !DSA_HasValue(feature.source_high) || !DSA_HasValue(feature.source_low) ||
