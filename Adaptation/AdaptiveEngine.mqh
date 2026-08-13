@@ -37,6 +37,10 @@ struct DSAAdaptiveTuningState
 {
    double interval_scale;
    double ridge_lambda_scale;
+   double last_approved_score;
+   double last_rejected_score;
+   int last_approval_reason_mask;
+   bool last_candidate_approved;
    long tuning_version;
 };
 
@@ -56,6 +60,10 @@ void DSA_InitAdaptiveTuning(DSAAdaptiveTuningState &tuning)
 {
    tuning.interval_scale = 1.0;
    tuning.ridge_lambda_scale = 1.0;
+   tuning.last_approved_score = DBL_MAX;
+   tuning.last_rejected_score = DBL_MAX;
+   tuning.last_approval_reason_mask = DSA_REASON_NONE;
+   tuning.last_candidate_approved = false;
    tuning.tuning_version = 1;
 }
 
@@ -69,6 +77,34 @@ void DSA_InitAdaptiveJob(DSAAdaptiveJobState &job)
    job.best_score = DBL_MAX;
    job.best_ridge_score = DBL_MAX;
    job.job_version = 0;
+}
+
+double DSA_CurrentAdaptiveBaselineScore(DSAAdaptiveTuningState &tuning,
+                                        const int rates_total,
+                                        const double &absolute_error_buffer[],
+                                        const double &radius_buffer[],
+                                        const double &model_score_buffer[],
+                                        const double &disagreement_buffer[],
+                                        const double &stress_buffer[])
+{
+   const double interval_score = DSA_EvaluateIntervalCandidate(rates_total,
+                                                              tuning.interval_scale,
+                                                              absolute_error_buffer,
+                                                              radius_buffer);
+   const double ridge_score = DSA_EvaluateRidgeCandidate(rates_total,
+                                                        tuning.ridge_lambda_scale,
+                                                        absolute_error_buffer,
+                                                        radius_buffer,
+                                                        model_score_buffer,
+                                                        disagreement_buffer,
+                                                        stress_buffer);
+   if(interval_score == DBL_MAX && ridge_score == DBL_MAX)
+      return DBL_MAX;
+   if(interval_score == DBL_MAX)
+      return ridge_score;
+   if(ridge_score == DBL_MAX)
+      return interval_score;
+   return interval_score + ridge_score;
 }
 
 void DSA_InitStressDiagnostics(DSAStressDiagnosticSnapshot &diagnostics)
@@ -272,7 +308,9 @@ void DSA_StartAdaptiveJob(DSAAdaptiveJobState &job,
    job.reason_mask = reason_mask;
    job.candidate_cursor = 0;
    job.best_interval_scale = 1.0;
+   job.best_ridge_lambda_scale = 1.0;
    job.best_score = DBL_MAX;
+   job.best_ridge_score = DBL_MAX;
    job.job_version = runtime.active_state_version;
    runtime.recalibration_pending = true;
    runtime.heavy_task_active = true;
@@ -463,16 +501,42 @@ void DSA_ProcessAdaptiveJobSlice(DSAAdaptiveJobState &job,
       return;
    }
 
-   if(job.best_score < DBL_MAX)
+   const double baseline_score = DSA_CurrentAdaptiveBaselineScore(tuning,
+                                                                 rates_total,
+                                                                 absolute_error_buffer,
+                                                                 radius_buffer,
+                                                                 model_score_buffer,
+                                                                 disagreement_buffer,
+                                                                 stress_buffer);
+   const bool interval_ready = (job.best_score < DBL_MAX);
+   const bool ridge_ready = (job.best_ridge_score < DBL_MAX);
+   double candidate_score = DBL_MAX;
+   if(interval_ready && ridge_ready)
+      candidate_score = job.best_score + job.best_ridge_score;
+   else if(interval_ready)
+      candidate_score = job.best_score;
+   else if(ridge_ready)
+      candidate_score = job.best_ridge_score;
+
+   const bool candidate_approved = (candidate_score < DBL_MAX &&
+                                    (baseline_score == DBL_MAX ||
+                                     candidate_score + 0.50 < baseline_score ||
+                                     candidate_score < baseline_score * 0.98));
+
+   tuning.last_candidate_approved = candidate_approved;
+   tuning.last_approval_reason_mask = job.reason_mask;
+   if(candidate_approved)
    {
-      tuning.interval_scale = DSA_Clamp(job.best_interval_scale,0.75,1.75);
+      if(interval_ready)
+         tuning.interval_scale = DSA_Clamp(job.best_interval_scale,0.75,1.75);
+      if(ridge_ready)
+         tuning.ridge_lambda_scale = DSA_Clamp(job.best_ridge_lambda_scale,0.50,2.25);
+      tuning.last_approved_score = candidate_score;
       tuning.tuning_version++;
    }
-
-   if(job.best_ridge_score < DBL_MAX)
+   else
    {
-      tuning.ridge_lambda_scale = DSA_Clamp(job.best_ridge_lambda_scale,0.50,2.25);
-      tuning.tuning_version++;
+      tuning.last_rejected_score = candidate_score;
    }
 
    DSA_InitAdaptiveJob(job);

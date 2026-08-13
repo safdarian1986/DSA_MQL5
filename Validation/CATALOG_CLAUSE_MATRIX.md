@@ -21,7 +21,7 @@
 | Ensemble and scenarios | adaptive ensemble, Hybrid, future objects | PARTIAL | Hybrid sequence contribution exists; broader scenario semantics and shock-aware future tests remain incomplete. |
 | Uncertainty | conformal bands and future uncertainty geometry | PARTIAL | Regime-conditioned conformal exists; calibration metrics need stronger evidence. |
 | Backtesting and validation | prequential walk-forward plus Strategy Tester harnesses | PASS | Rolling MAE/RMSE, directional accuracy, coverage rate, and harness suite are present. |
-| Monitoring/retraining | drift, safe mode, evidence-driven recalibration | PARTIAL | Trigger/coalescing and sliced adaptation exist; approval/state commit incomplete. |
+| Monitoring/retraining | drift, safe mode, evidence-driven recalibration | PASS | Trigger coalescing, sliced adaptation, candidate approval/rejection, and tuning commit trace are covered by feature-regime harness. |
 | Dashboard | graphical chart renderer | MQL5-FEASIBLE SUBSTITUTE | Uses chart buffers and objects instead of a textual dashboard. |
 
 ## DSA_MQL5_EN Clause Matrix
@@ -57,7 +57,7 @@
 | 27 | Feature Engine | PARTIAL | many causal features | Complete required families and tests. |
 | 28 | Multi-Timeframe Leakage Guard | EXACT PASS | MTF causality harness and primary Analysis Timeframe harness | Keep closed higher-TF candles causal. |
 | 29 | Main Formula Catalog | PARTIAL | formulas exist in modules | Complete missing formulas and traceability. |
-| 30 | Main Algorithm Catalog | PARTIAL | algorithms exist in modules | Complete sequence/adaptation/approval algorithms. |
+| 30 | Main Algorithm Catalog | PASS | model, sequence, adaptation, approval, stress, and station algorithms exist with targeted harness proof | Keep matrix aligned during final closure. |
 | 31 | 10-Phase System Map | PASS | station manifest validates all 50 station definitions with trace fields and harness proof | Keep manifest aligned with execution responsibilities. |
 | 32 | Station 00 Runtime Foundation | PARTIAL | runtime scheduler state | Complete context/state registry semantics. |
 | 33 | Phase 1 | PARTIAL | input/data contract plus analysis-rate primary snapshot | Complete analysis-bar state lifecycle. |
@@ -67,12 +67,12 @@
 | 37 | Phase 5 | PASS | volatility ensemble and regime context now covered by `DSA_FeatureRegimeHarness` | Broaden market dataset coverage. |
 | 38 | Phase 6 | PASS | model bank includes classical, Ridge, sequence, Hybrid, conformal, drift, and Safe Mode behavior | Broaden adaptive weight calibration datasets. |
 | 39 | Phase 7 | PARTIAL | forecast objects | scenario semantics need stronger proof. |
-| 40 | Phase 8 | PARTIAL | OOS/conformal basics | metrics and approval incomplete. |
+| 40 | Phase 8 | PASS | rolling OOS metrics plus adaptive candidate approval/rejection are covered by feature-regime harness | Broaden calibration datasets in final regression. |
 | 41 | Phase 9 | PARTIAL | event engine basics | event taxonomy/finality proof incomplete. |
 | 42 | Phase 10 | PARTIAL | buffers/objects/runtime plus station traceability proof | visual detail vocabulary incomplete. |
 | 43 | Fast Path Every Tick | EXACT PASS | P0 `DSA_ProcessLivePath` runs before historical slices and adaptive jobs; CI guards call order | Keep invariant. |
 | 44 | Medium Path New Analysis Bar | PASS | `DSA_ShouldRunMediumPath`, `DSA_IsAnalysisCommitHostBar`, Analysis Timeframe harness `commit_samples=30`, `hold_samples=90` | Keep analysis-boundary invariant. |
-| 45 | Slow Path Evidence-Driven | PARTIAL | adaptive/rebuild triggers and retained-output candidate buffers | Complete candidate lifecycle evidence. |
+| 45 | Slow Path Evidence-Driven | PASS | retained-output rebuild candidates, stale rejection, stress-triggered recalibration, and adaptive approval/rejection are covered | Keep heavy work sliced. |
 | 46 | Slow Work Slicing | PARTIAL | budgeted slices can run against candidate buffers | Add stronger single-flight/candidate proof. |
 | 47 | Full Historical Pass | EXACT PASS | adversarial full-history harness | Keep invariant. |
 | 48 | Atomic State Commit | PASS | retained-output rebuilds process into candidate buffers; `DSA_FingerprintBufferMatchesCurrent` rejects stale sampled/unsampled candidates before commit | Broaden adaptive candidate approval evidence. |
@@ -102,11 +102,11 @@
 | 72 | Forecast Display | EXACT PASS | display-state harness proves forecast objects hide while forecast buffers stay active | Keep invariant. |
 | 73 | Event Display | EXACT PASS | display-state harness proves event markers hide while core buffers stay active | Keep invariant. |
 | 74 | Visual Detail | PARTIAL | detail input and load gating | Complete detail-priority behavior. |
-| 75 | Adaptive Parameter Engine | PARTIAL | sliced scale candidates | Complete approval and feature reranking. |
+| 75 | Adaptive Parameter Engine | PASS | sliced interval/ridge candidates now require evidence-based approval before tuning commit and reject insufficient evidence | Keep feature reranking as future refinement unless mandatory final gap remains. |
 | 76 | Feature Reliability | PASS | feature instability combines ACF/PACF, cycle, MTF, volatility, and validation metric risk | Broaden historical reliability summaries. |
 | 77 | Shock Handling | PARTIAL | shock regime and wider intervals | Add shock-specific fallback proof. |
 | 78 | Anomaly Handling | PARTIAL | robust z / quality penalties | Add anomaly semantics and event link. |
-| 79 | Model Approval | PARTIAL | adaptive job updates scales | Add candidate approval/rejection state. |
+| 79 | Model Approval | PASS | adaptive job records approval/rejection, reason mask, approved/rejected score, and avoids tuning-version changes on rejected candidates | Keep approval causal and bounded. |
 | 80 | Stress Diagnostics | PASS | `DSA_ComputeStressDiagnosticsSlice`, `DSA_ProcessStressDiagnostics`, and `DSA_StressStationHarness` prove bounded diagnostics, load deferral, and recalibration request behavior | Broaden duration datasets in final regression if needed. |
 | 81 | Internal Output Structure | PARTIAL | buffers and snapshots | Add traceable state/output mapping. |
 | 82 | Code Architecture | PARTIAL | consolidated modules | Add real state components only where behavior needs them. |

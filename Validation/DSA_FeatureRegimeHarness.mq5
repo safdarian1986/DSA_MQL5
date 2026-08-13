@@ -11,6 +11,8 @@ bool RegimeContextOk = false;
 bool RuntimeScoreOk = false;
 bool RollingMetricsOk = false;
 bool AdaptiveStressOk = false;
+bool AdaptiveApprovalOk = false;
+bool AdaptiveRejectOk = false;
 
 void DSA_RecordFailure(const string message)
 {
@@ -243,6 +245,75 @@ void DSA_RunFeatureRegimeHarness()
       DSA_RecordFailure("adaptive diagnostics did not react to stress and runtime load");
    ++HarnessChecks;
 
+   DSAAdaptiveTuningState tuning;
+   DSAAdaptiveJobState job;
+   DSARuntimeSchedulerState runtime;
+   DSA_InitAdaptiveTuning(tuning);
+   DSA_InitAdaptiveJob(job);
+   DSA_RuntimeInit(runtime);
+   runtime.build_complete = true;
+   runtime.rebuild_pending = false;
+   runtime.active_state_version = 7;
+   DSA_StartAdaptiveJob(job,runtime,adaptive.reason_mask);
+   for(int step = 0; step < 11; ++step)
+      DSA_ProcessAdaptiveJobSlice(job,tuning,runtime,ArraySize(time),
+                                  absolute_error_buffer,upper_buffer,
+                                  quality_buffer,regime_buffer,coverage_buffer);
+   AdaptiveApprovalOk = (!job.active &&
+                         !runtime.recalibration_pending &&
+                         !runtime.heavy_task_active &&
+                         tuning.last_candidate_approved &&
+                         tuning.last_approval_reason_mask == adaptive.reason_mask &&
+                         tuning.tuning_version > 1 &&
+                         DSA_HasValue(tuning.last_approved_score));
+   if(!AdaptiveApprovalOk)
+      DSA_RecordFailure("adaptive candidate was not approved and committed from valid evidence");
+   ++HarnessChecks;
+
+   double short_error[];
+   double short_radius[];
+   double short_score[];
+   double short_disagreement[];
+   double short_stress[];
+   ArrayResize(short_error,8);
+   ArrayResize(short_radius,8);
+   ArrayResize(short_score,8);
+   ArrayResize(short_disagreement,8);
+   ArrayResize(short_stress,8);
+   ArraySetAsSeries(short_error,true);
+   ArraySetAsSeries(short_radius,true);
+   ArraySetAsSeries(short_score,true);
+   ArraySetAsSeries(short_disagreement,true);
+   ArraySetAsSeries(short_stress,true);
+   for(int i = 0; i < 8; ++i)
+   {
+      short_error[i] = 0.25;
+      short_radius[i] = 0.90;
+      short_score[i] = 60.0;
+      short_disagreement[i] = 0.30;
+      short_stress[i] = 0.20;
+   }
+
+   DSA_InitAdaptiveTuning(tuning);
+   DSA_InitAdaptiveJob(job);
+   DSA_RuntimeInit(runtime);
+   runtime.build_complete = true;
+   runtime.rebuild_pending = false;
+   runtime.active_state_version = 9;
+   DSA_StartAdaptiveJob(job,runtime,DSA_REASON_LOW_CONFIDENCE);
+   for(int step = 0; step < 11; ++step)
+      DSA_ProcessAdaptiveJobSlice(job,tuning,runtime,ArraySize(short_error),
+                                  short_error,short_radius,
+                                  short_score,short_disagreement,short_stress);
+   AdaptiveRejectOk = (!job.active &&
+                       !runtime.recalibration_pending &&
+                       !runtime.heavy_task_active &&
+                       !tuning.last_candidate_approved &&
+                       tuning.tuning_version == 1);
+   if(!AdaptiveRejectOk)
+      DSA_RecordFailure("adaptive candidate was not rejected when evidence was insufficient");
+   ++HarnessChecks;
+
    HarnessDone = true;
    Print("DSA feature-regime harness completed. failures=",HarnessFailures,
          " checks=",HarnessChecks,
@@ -251,6 +322,8 @@ void DSA_RunFeatureRegimeHarness()
          " runtime_score=",RuntimeScoreOk,
          " rolling_metrics=",RollingMetricsOk,
          " adaptive_stress=",AdaptiveStressOk,
+         " adaptive_approval=",AdaptiveApprovalOk,
+         " adaptive_reject=",AdaptiveRejectOk,
          " coverage_rate=",validation.coverage_rate,
          " runtime_cost=",loaded_model.runtime_cost_score);
 }
@@ -274,5 +347,7 @@ double OnTester()
            RegimeContextOk &&
            RuntimeScoreOk &&
            RollingMetricsOk &&
-           AdaptiveStressOk ? 1.0 : 0.0);
+           AdaptiveStressOk &&
+           AdaptiveApprovalOk &&
+           AdaptiveRejectOk ? 1.0 : 0.0);
 }
