@@ -36,13 +36,13 @@
 | 6 | Adaptive Runtime Budget | PARTIAL | latency EWMA and load budget | Include broader runtime cost in model score. |
 | 7 | Runtime Priority | PARTIAL | `OnCalculate` prepares rebuild cheaply, then runs P0 before P8 slices | Complete Analysis Bar and lower-priority queue semantics. |
 | 8 | Runtime Busy Guard | PARTIAL | `runtime_busy`, single active flags | Strengthen single-flight commit behavior. |
-| 9 | Trigger Coalescing | PARTIAL | reason mask merge | Add stale candidate rejection evidence. |
+| 9 | Trigger Coalescing | PASS | reason mask merge plus history-revision harness `revision_trigger=true` | Broaden non-history trigger lifecycle tests. |
 | 10 | Selection Data Contract | EXACT PASS | `DSASelectionChannels`, selection harness | Keep independent channels. |
 | 11 | Auxiliary Central Series | EXACT PASS | OHLC average, median, OC midpoint | Keep as auxiliary, not replacement. |
 | 12 | Candle 0 Contract | PARTIAL | live `DSA_ProcessLivePath` derives provisional `DSALiveState` from committed `DSAClosedState` | Add broader live component coverage tests. |
 | 13 | ClosedState and LiveState | PASS | `Core/StateRegistry.mqh`, `DSA_StateIsolationHarness`, live state starts from valid closed state and is replaced each tick | Keep state isolation invariant. |
 | 14 | Full History Range | EXACT PASS | adversarial `deep_bars=8437` | Keep full source coverage. |
-| 15 | Progressive Historical Build | PARTIAL | sliced historical build with retained-output candidate buffers | Add stale candidate rejection tests. |
+| 15 | Progressive Historical Build | PASS | sliced historical build with retained-output candidate buffers and history-revision harness stale-candidate rejection | Broaden single-flight stress proof. |
 | 16 | Model Maturity | PARTIAL | maturity-based weights | Add sequence maturity and residual maturity gates. |
 | 17 | Adaptive Historical Weight | PARTIAL | Ridge time decay | Broaden evidence-based time weighting. |
 | 18 | Fixed Market Parameters | PARTIAL | some adaptive scales | Classify and adapt market-behavior constants. |
@@ -75,7 +75,7 @@
 | 45 | Slow Path Evidence-Driven | PARTIAL | adaptive/rebuild triggers and retained-output candidate buffers | Complete candidate lifecycle evidence. |
 | 46 | Slow Work Slicing | PARTIAL | budgeted slices can run against candidate buffers | Add stronger single-flight/candidate proof. |
 | 47 | Full Historical Pass | EXACT PASS | adversarial full-history harness | Keep invariant. |
-| 48 | Atomic State Commit | PARTIAL | retained-output rebuilds process into candidate buffers and reject stale candidates before commit; display toggles keep engines active | Add revised-history runtime proof. |
+| 48 | Atomic State Commit | PASS | retained-output rebuilds process into candidate buffers; `DSA_FingerprintBufferMatchesCurrent` rejects stale sampled/unsampled candidates before commit | Broaden adaptive candidate approval evidence. |
 | 49 | Input Fingerprint | PARTIAL | computational fingerprint exists | Separate display-only inputs from analytical state. |
 | 50 | Input Changes | PARTIAL | input change triggers rebuild | Avoid unnecessary rebuild for display-only changes. |
 | 51 | Graphical Output Contract | PARTIAL | 10 buffers and future objects | Complete graphical vocabulary proof. |
@@ -115,12 +115,12 @@
 | 85 | Normal Tick Contract | PARTIAL | P0 live path derives LiveState from ClosedState before rendering | Add broader live component tests. |
 | 86 | New-Bar Tick Contract | PARTIAL | New Analysis Bar detection commits ClosedState before live processing | Add mature forecast resolution/online-state tests. |
 | 87 | Heavy Trigger Contract | PARTIAL | reason mask and slices | Add candidate job lifecycle. |
-| 88 | History Revision Contract | PARTIAL | revision detection plus retained-output candidate rebuild | Add explicit revised-history runtime proof. |
-| 89 | Stale Result Protection | PARTIAL | fingerprint/version checks plus stale-candidate rejection guard | Add explicit stale candidate runtime test. |
+| 88 | History Revision Contract | PASS | `DSA_HistoryRevisionHarness` proves bar/history fingerprint change, revision trigger, and completed-build restart | Keep bounded-sweep latency invariant. |
+| 89 | Stale Result Protection | PASS | `DSA_HistoryRevisionHarness` proves sampled and unsampled stale candidates are rejected before commit | Broaden stale adaptive-job proof. |
 | 90 | Ready-for-Production Contract | MISSING | current audit not complete | Requires zero mandatory PARTIAL/MISMATCH/MISSING. |
 
 ## Current Highest-Risk Work Queue
 
-1. Revised-history runtime proof.
-2. Full feature, volatility, regime, adaptive weights, latency-aware score.
-3. Lightweight Multi-Scale Sequence Expert and true Hybrid ensemble.
+1. Full feature, volatility, regime, adaptive weights, latency-aware score.
+2. Lightweight Multi-Scale Sequence Expert and true Hybrid ensemble.
+3. Stress diagnostics and station traceability.

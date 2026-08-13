@@ -142,6 +142,20 @@ bool DSA_CanCommitCandidate(DSARuntimeSchedulerState &runtime,const string input
    return true;
 }
 
+bool DSA_BuildInProgressMatches(DSARuntimeSchedulerState &runtime,
+                                const int rates_total,
+                                const string input_fingerprint,
+                                const string history_fingerprint)
+{
+   if(!runtime.rebuild_pending || runtime.build_complete)
+      return false;
+   if(!DSA_CanCommitCandidate(runtime,input_fingerprint,history_fingerprint))
+      return false;
+   if(runtime.build_total != rates_total)
+      return false;
+   return (runtime.build_cursor >= 0);
+}
+
 void DSA_MarkBuildComplete(DSARuntimeSchedulerState &runtime)
 {
    runtime.build_complete = true;

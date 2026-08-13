@@ -37,10 +37,10 @@ This workspace contains a pure MQL5, non-trading MetaTrader 5 custom indicator i
 
 ## Fresh Validation Evidence
 
-- Final indicator compile log for the latest independent pass: `compile-evidence-20260813-174611-final.log`.
+- Final indicator compile log for the latest independent pass: `compile-evidence-20260813-181916-final.log`.
 - Final indicator compile result: `0 errors, 0 warnings`.
-- Latest harness compile logs include `compile-evidence-20260813-174611-runtime-harness.log`, `compile-evidence-20260813-174611-deep-harness.log`, `compile-evidence-20260813-174611-chart-harness.log`, `compile-evidence-20260813-174611-mtf-harness.log`, `compile-evidence-20260813-174611-adversarial-harness.log`, `compile-evidence-20260813-174611-modes-harness.log`, `compile-evidence-20260813-174611-selection-harness.log`, `compile-evidence-20260813-174611-analysis-timeframe-harness.log`, `compile-evidence-20260813-174611-state-harness.log`, and `compile-evidence-20260813-174611-display-harness.log`; all report `0 errors, 0 warnings`.
-- Latest Strategy Tester evidence: `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`, run window `2026-08-13 17:47-17:50`.
+- Latest harness compile logs include `compile-evidence-20260813-181916-runtime-harness.log`, `compile-evidence-20260813-181916-deep-harness.log`, `compile-evidence-20260813-181916-chart-harness.log`, `compile-evidence-20260813-181916-mtf-harness.log`, `compile-evidence-20260813-181916-adversarial-harness.log`, `compile-evidence-20260813-181916-modes-harness.log`, `compile-evidence-20260813-181916-selection-harness.log`, `compile-evidence-20260813-181916-analysis-timeframe-harness.log`, `compile-evidence-20260813-181916-state-harness.log`, `compile-evidence-20260813-181916-display-harness.log`, and `compile-evidence-20260813-181916-history-revision-harness.log`; all report `0 errors, 0 warnings`.
+- Latest Strategy Tester evidence: `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`, run window `2026-08-13 18:09-18:20`.
 - Selection Data harness: `OnTester result 1`, `failures=0`, direct independent-channel contract checks passed.
 - Adversarial full-history / anti-repaint harness: `OnTester result 1`, `failures=0`, `deep_bars=8437`, `oldest_shift=8387`, `mid_shift=4193`, `anti_repaint=true`.
 - MTF causality harness: `OnTester result 1`, `failures=0`, `samples=234`.
@@ -51,14 +51,15 @@ This workspace contains a pure MQL5, non-trading MetaTrader 5 custom indicator i
 - Analysis Timeframe harness: `OnTester result 1`, `failures=0`, `samples=120`, `commit_samples=30`, `hold_samples=90`.
 - State-isolation harness: `OnTester result 1`, `failures=0`, `checks=4`.
 - Display-state harness: `OnTester result 1`, `failures=0`, `hidden_history=true`, `forecast_hidden=true`, `events_hidden=true`.
+- History-revision harness: `OnTester result 1`, `failures=0`, `checks=7`, `history_fingerprint_changed=true`, `stale_candidate_rejected=true`, `unsampled_candidate_rejected=true`.
 
 ## Remaining Limits
 
 - `Deep Learning` and the Multi-Scale component of `Hybrid` remain owner-resolved but not yet fully implemented.
-- Arbitrary closed-bar history revisions are covered by per-bar fingerprints and a bounded background sweep; detection is progressive rather than an immediate full-history scan on every ordinary tick.
+- Arbitrary closed-bar history revisions are covered by per-bar fingerprints, sampled history checkpoints, a bounded background sweep, and a full candidate-buffer fingerprint guard before atomic commit; detection remains progressive rather than an immediate full-history scan on every ordinary tick.
 - AR-Ridge remains intentionally low-dimensional and bounded for MQL5 tick safety; it is not a claim of statistical superiority.
 - No trading, Python, WebRequest, DLL import, external model server, or external API dependency is used.
 
 ## Assessment
 
-The implementation is materially stronger after the adversarial audit, history-revision audit, independent Selection Data channel work, Fast Path priority ordering, Analysis Timeframe primary target routing, New Analysis Bar commit sequencing, explicit ClosedState/LiveState isolation, display-state proof, and retained-output candidate rebuilds. It is still not production-ready because the lightweight Multi-Scale Sequence Expert, true Hybrid participation, revised-history runtime proof, and other clause-level Catalog contracts still require completion and proof.
+The implementation is materially stronger after the adversarial audit, history-revision runtime proof, independent Selection Data channel work, Fast Path priority ordering, Analysis Timeframe primary target routing, New Analysis Bar commit sequencing, explicit ClosedState/LiveState isolation, display-state proof, and retained-output candidate rebuilds. It is still not production-ready because the lightweight Multi-Scale Sequence Expert, true Hybrid participation, and other clause-level Catalog contracts still require completion and proof.

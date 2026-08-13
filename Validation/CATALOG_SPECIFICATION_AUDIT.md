@@ -41,7 +41,7 @@
 | New Analysis Bar commit sequence | PASS | `DSA_ShouldRunMediumPath`, `DSA_ProcessAnalysisCommitBar`, Analysis Timeframe harness `commit_samples=30`, `hold_samples=90` |
 | ClosedState / LiveState isolation | PASS | `Core/StateRegistry.mqh`, `DSAClosedState`, `DSALiveState`, state-isolation harness `checks=4` |
 | Display-state toggles | PASS | `DSA_DisplayStateHarness` validates hidden historical plots, forecast objects, and event markers while calculation buffers remain active |
-| Retained-output candidate rebuild | PASS | `DSA_CandidateBuildActive`, `DSA_CandidateBuildMatches`, and `DSA_CommitCandidateBuffers` protect visible history during retained rebuilds and reject stale candidates |
+| Retained-output candidate rebuild | PASS | `DSA_CandidateBuildActive`, `DSA_CandidateBuildMatches`, `DSA_FingerprintBufferMatchesCurrent`, and `DSA_CommitCandidateBuffers` protect visible history during retained rebuilds and reject stale candidates |
 | Closed historical anti-repaint | PASS | adversarial harness captured closed bar and compared after future bars |
 | MTF leakage guard | PASS | `Data/MTFAlignment.mqh`, MTF harness `samples=234` |
 | Analysis Timeframe primary path | PASS | `DSA_GetPrimaryAnalysisSnapshot`, `primary_analysis_available`, Analysis Timeframe harness |
@@ -56,20 +56,21 @@
 | All official Model Mode values attach | PASS | `DSA_ModelModeHarness`, all six modes true |
 | Deep Learning implementation | MISSING | owner-resolved lightweight Multi-Scale Sequence Expert not yet implemented |
 | Hybrid Multi-Scale component | PARTIAL | Statistical + Ridge subset remains; sequence family contribution still missing |
-| Arbitrary unsampled history revision detection | PASS | `CalcBarFingerprint`, `DSA_BarRevisionFingerprint`, bounded `DSA_AuditHistoricalRevisionSlice` sweep |
+| Arbitrary unsampled history revision detection | PASS | `CalcBarFingerprint`, `DSA_BarRevisionFingerprint`, `DSA_FingerprintBufferMatchesCurrent`, bounded `DSA_AuditHistoricalRevisionSlice` sweep, and history-revision harness |
 | Predictive accuracy / profitability | NOT APPLICABLE | explicitly outside scope |
 
 ## Fresh Evidence
 
-- Final compile: `compile-evidence-20260813-174611-final.log`, `0 errors, 0 warnings`.
-- Harness compiles: `compile-evidence-20260813-174611-*-harness.log`, all `0 errors, 0 warnings`.
-- Latest Strategy Tester run window: `2026-08-13 17:47-17:50` in `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`.
+- Final compile: `compile-evidence-20260813-181916-final.log`, `0 errors, 0 warnings`.
+- Harness compiles: `compile-evidence-20260813-181916-*-harness.log`, all `0 errors, 0 warnings`.
+- Latest Strategy Tester run window: `2026-08-13 18:09-18:20` in `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`.
 - Selection Data runtime: `OnTester result 1`, `failures=0`, independent O/H/L/C, H/L, and O/C contract validated.
 - Adversarial full-history and anti-repaint runtime: `OnTester result 1`, `failures=0`, `deep_bars=8437`.
 - MTF causality runtime: `OnTester result 1`, `failures=0`, `samples=234`.
 - Analysis Timeframe runtime: `OnTester result 1`, `failures=0`, `samples=120`, `commit_samples=30`, `hold_samples=90`.
 - State-isolation runtime: `OnTester result 1`, `failures=0`, `checks=4`.
 - Display-state runtime: `OnTester result 1`, `failures=0`, `hidden_history=true`, `forecast_hidden=true`, `events_hidden=true`.
+- History-revision runtime: `OnTester result 1`, `failures=0`, `checks=7`, `history_fingerprint_changed=true`, `stale_candidate_rejected=true`, `unsampled_candidate_rejected=true`.
 - Future object semantic runtime: `OnTester result 1`, `failures=0`, `count=121`.
 - Model mode runtime: `OnTester result 1`, all six official modes true.
 
@@ -77,4 +78,4 @@
 
 This audit is now being expanded clause by clause under the owner's clarified architecture decision. The project must not be marked production-ready while any mandatory Catalog item remains `PARTIAL`, `MISMATCH`, `MISSING`, or critical `EVIDENCE INSUFFICIENT`.
 
-The remaining history-audit constraint is latency, not coverage: arbitrary closed-bar revisions are detected by a rotating bounded sweep instead of a full-history scan on every ordinary tick.
+The remaining history-audit constraint is latency, not coverage: arbitrary closed-bar revisions are detected by a rotating bounded sweep and candidate commits are rejected when any built closed-bar fingerprint no longer matches current history.

@@ -52,6 +52,7 @@ jobs:
             'Validation/DSA_AnalysisTimeframeHarness.mq5',
             'Validation/DSA_StateIsolationHarness.mq5',
             'Validation/DSA_DisplayStateHarness.mq5',
+            'Validation/DSA_HistoryRevisionHarness.mq5',
             'Validation/DSA_RuntimeHarness.mq5',
             'Validation/DSA_DeepLearningHarness.mq5',
             'Validation/RuntimeTesterAdversarial.ini',
@@ -62,6 +63,7 @@ jobs:
             'Validation/RuntimeTesterAnalysisTimeframe.ini',
             'Validation/RuntimeTesterState.ini',
             'Validation/RuntimeTesterDisplay.ini',
+            'Validation/RuntimeTesterHistoryRevision.ini',
             'Validation/RuntimeTester.ini',
             'Validation/RuntimeTesterDeep.ini'
           )
@@ -113,6 +115,16 @@ jobs:
           $dataContract = Get-Content -LiteralPath 'Data/DataContract.mqh' -Raw
           if ($dataContract -notmatch 'DSASelectionChannels' -or $dataContract -notmatch 'DSA_BuildSelectionChannels') {
             throw 'Expected independent selection-channel contract support.'
+          }
+
+          $historyRevisionHarness = Get-Content -LiteralPath 'Validation/DSA_HistoryRevisionHarness.mq5' -Raw
+          if ($dataContract -notmatch 'DSA_FingerprintBufferMatchesCurrent' -or
+              $dataContract -notmatch 'DSA_BarRevisionFingerprint' -or
+              $indicatorHeader -notmatch 'DSA_FingerprintBufferMatchesCurrent' -or
+              (Get-Content -LiteralPath 'Runtime/TickScheduler.mqh' -Raw) -notmatch 'DSA_BuildInProgressMatches' -or
+              $historyRevisionHarness -notmatch 'HistoryFingerprintChangedOk' -or
+              $historyRevisionHarness -notmatch 'UnsampledCandidateRejectedOk') {
+            throw 'Expected revised-history runtime proof and stale-candidate fingerprint guard support.'
           }
 
           $mtfContract = Get-Content -LiteralPath 'Data/MTFAlignment.mqh' -Raw

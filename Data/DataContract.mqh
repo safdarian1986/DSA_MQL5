@@ -275,20 +275,56 @@ double DSA_BarRevisionFingerprint(const int index,
    return hash + 1.0;
 }
 
-string DSA_HistoryFingerprint(const int rates_total,const datetime &time[])
+bool DSA_FingerprintBufferMatchesCurrent(const int rates_total,
+                                         const datetime &time[],
+                                         const double &open[],
+                                         const double &high[],
+                                         const double &low[],
+                                         const double &close[],
+                                         const long &tick_volume[],
+                                         const int &spread[],
+                                         const double &bar_fingerprint_buffer[])
+{
+   const int total = MathMin(rates_total,ArraySize(bar_fingerprint_buffer));
+   if(total < 2)
+      return false;
+
+   for(int shift = 1; shift < total; ++shift)
+   {
+      const double stored = bar_fingerprint_buffer[shift];
+      if(!DSA_HasValue(stored))
+         return false;
+
+      const double current = DSA_BarRevisionFingerprint(shift,rates_total,time,open,high,low,close,tick_volume,spread);
+      if(MathAbs(stored - current) > 0.5)
+         return false;
+   }
+
+   return true;
+}
+
+string DSA_HistoryFingerprint(const int rates_total,
+                              const datetime &time[],
+                              const double &open[],
+                              const double &high[],
+                              const double &low[],
+                              const double &close[],
+                              const long &tick_volume[],
+                              const int &spread[])
 {
    if(rates_total <= 0)
       return "empty";
+
    const datetime oldest = time[rates_total - 1];
-   string fingerprint = StringFormat("oldest=%I64d",(long)oldest);
-   int offsets[8] = {1,2,4,8,16,64,512,4096};
+   string fingerprint = StringFormat("bars=%d|oldest=%I64d",rates_total,(long)oldest);
+   int shifts[8] = {1,2,4,8,16,64,512,4096};
    for(int i = 0; i < 8; ++i)
    {
-      const int offset = offsets[i];
-      if(offset < rates_total)
+      const int shift = shifts[i];
+      if(shift > 0 && shift < rates_total)
       {
-         const int index = rates_total - 1 - offset;
-         fingerprint += StringFormat("|o%d=%I64d",offset,(long)time[index]);
+         const double bar_revision = DSA_BarRevisionFingerprint(shift,rates_total,time,open,high,low,close,tick_volume,spread);
+         fingerprint += StringFormat("|s%d=%I64d:%.0f",shift,(long)time[shift],bar_revision);
       }
    }
    return fingerprint;

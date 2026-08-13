@@ -458,10 +458,8 @@ void DSA_PrepareBackgroundBuild(const int rates_total,const string history_finge
    if(!(RuntimeState.rebuild_pending || !RuntimeState.build_complete))
       return;
 
-   const bool candidate_matches = (DSA_CanCommitCandidate(RuntimeState,InputContract.fingerprint,history_fingerprint) &&
-                                   RuntimeState.build_total == rates_total &&
-                                   RuntimeState.build_cursor >= 0);
-   if(candidate_matches && !DSA_CandidateRejected &&
+   const bool build_in_progress_matches = DSA_BuildInProgressMatches(RuntimeState,rates_total,InputContract.fingerprint,history_fingerprint);
+   if(build_in_progress_matches && !DSA_CandidateRejected &&
       (!DSA_CandidateBuildActive || DSA_CandidateBuildMatches(rates_total)))
       return;
 
@@ -809,7 +807,8 @@ void DSA_ProcessHistoricalSlice(const int rates_total,
    {
       if(DSA_CandidateBuildActive)
       {
-         if(!DSA_CandidateBuildMatches(rates_total))
+         if(!DSA_CandidateBuildMatches(rates_total) ||
+            !DSA_FingerprintBufferMatchesCurrent(rates_total,time,open,high,low,close,tick_volume,spread,CandidateCalcBarFingerprint))
          {
             DSA_ClearCandidateBuild();
             DSA_CandidateRejected = true;
@@ -963,7 +962,7 @@ int OnCalculate(const int rates_total,
                           InpAnalysisTimeframe,InpFutureForecastRange,InpModelMode,
                           InpHistoricalAnalysis,InpForecastDisplay,InpEventDisplay,InpVisualDetail);
 
-   const string history_fingerprint = DSA_HistoryFingerprint(rates_total,time);
+   const string history_fingerprint = DSA_HistoryFingerprint(rates_total,time,open,high,low,close,tick_volume,spread);
    const bool input_changed = (RuntimeState.input_fingerprint != "" && RuntimeState.input_fingerprint != InputContract.fingerprint);
    const bool history_changed = (prev_calculated == 0 || RuntimeState.history_fingerprint != history_fingerprint);
 
