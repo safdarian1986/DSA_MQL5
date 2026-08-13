@@ -27,6 +27,7 @@ jobs:
             'DSA_MQL5_Native.ex5',
             'Core/DSACommon.mqh',
             'Core/InputContract.mqh',
+            'Core/StateRegistry.mqh',
             'Runtime/TickScheduler.mqh',
             'Data/DataContract.mqh',
             'Data/MTFAlignment.mqh',
@@ -49,6 +50,7 @@ jobs:
             'Validation/DSA_ModelModeHarness.mq5',
             'Validation/DSA_SelectionDataHarness.mq5',
             'Validation/DSA_AnalysisTimeframeHarness.mq5',
+            'Validation/DSA_StateIsolationHarness.mq5',
             'Validation/DSA_RuntimeHarness.mq5',
             'Validation/DSA_DeepLearningHarness.mq5',
             'Validation/RuntimeTesterAdversarial.ini',
@@ -57,6 +59,7 @@ jobs:
             'Validation/RuntimeTesterModes.ini',
             'Validation/RuntimeTesterSelection.ini',
             'Validation/RuntimeTesterAnalysisTimeframe.ini',
+            'Validation/RuntimeTesterState.ini',
             'Validation/RuntimeTester.ini',
             'Validation/RuntimeTesterDeep.ini'
           )
@@ -135,6 +138,20 @@ jobs:
               $indicatorHeader -notmatch 'DSA_CandidateBuildMatches' -or
               $indicatorHeader -notmatch 'DSA_CandidateRejected') {
             throw 'Expected retained-output candidate build, stale-candidate guard, and atomic commit support.'
+          }
+
+          $stateRegistry = Get-Content -LiteralPath 'Core/StateRegistry.mqh' -Raw
+          if ($stateRegistry -notmatch 'struct DSAClosedState' -or
+              $stateRegistry -notmatch 'struct DSALiveState' -or
+              $stateRegistry -notmatch 'DSA_BeginLiveState' -or
+              $stateRegistry -notmatch 'DSA_LiveStateUsesClosedBase') {
+            throw 'Expected explicit ClosedState and LiveState registry support.'
+          }
+
+          if ($indicatorHeader -notmatch 'DSA_CommitClosedStateFromMainBuffers' -or
+              $indicatorHeader -notmatch 'DSA_BeginLiveStateFromClosed' -or
+              $indicatorHeader -notmatch 'DSA_CaptureLiveStateFromMainBuffers') {
+            throw 'Expected indicator to commit ClosedState and derive LiveState from it.'
           }
 
           $mqlFiles = Get-ChildItem -Recurse -Force -File -Include '*.mq5','*.mqh' |

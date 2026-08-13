@@ -39,8 +39,8 @@
 | 9 | Trigger Coalescing | PARTIAL | reason mask merge | Add stale candidate rejection evidence. |
 | 10 | Selection Data Contract | EXACT PASS | `DSASelectionChannels`, selection harness | Keep independent channels. |
 | 11 | Auxiliary Central Series | EXACT PASS | OHLC average, median, OC midpoint | Keep as auxiliary, not replacement. |
-| 12 | Candle 0 Contract | PARTIAL | live `DSA_ProcessLivePath` after closed-bar commit on new bars | Add dedicated live snapshot/state object. |
-| 13 | ClosedState and LiveState | PARTIAL | closed bar 1 is committed before Candle0 live processing on new bars | Add full state-object separation. |
+| 12 | Candle 0 Contract | PARTIAL | live `DSA_ProcessLivePath` derives provisional `DSALiveState` from committed `DSAClosedState` | Add broader live component coverage tests. |
+| 13 | ClosedState and LiveState | PASS | `Core/StateRegistry.mqh`, `DSA_StateIsolationHarness`, live state starts from valid closed state and is replaced each tick | Keep state isolation invariant. |
 | 14 | Full History Range | EXACT PASS | adversarial `deep_bars=8437` | Keep full source coverage. |
 | 15 | Progressive Historical Build | PARTIAL | sliced historical build with retained-output candidate buffers | Add stale candidate rejection tests. |
 | 16 | Model Maturity | PARTIAL | maturity-based weights | Add sequence maturity and residual maturity gates. |
@@ -111,9 +111,9 @@
 | 81 | Internal Output Structure | PARTIAL | buffers and snapshots | Add traceable state/output mapping. |
 | 82 | Code Architecture | PARTIAL | consolidated modules | Add real state components only where behavior needs them. |
 | 83 | Standard Station Contract | PARTIAL | station manifest metadata | Link station fields to execution/tests. |
-| 84 | State Mutation | PARTIAL | closed-bar commit is ordered before live mutation; buffers remain shared | Enforce full live/closed mutation permissions. |
-| 85 | Normal Tick Contract | PARTIAL | P0 live path precedes historical/adaptive background work | Complete dedicated live-state read/write permissions. |
-| 86 | New-Bar Tick Contract | PARTIAL | New Analysis Bar detection drives P1 commit before live path | Add dedicated ClosedState/LiveState objects. |
+| 84 | State Mutation | PARTIAL | explicit ClosedState/LiveState snapshots exist, but some model internals still use shared buffers | Broaden mutation-permission enforcement. |
+| 85 | Normal Tick Contract | PARTIAL | P0 live path derives LiveState from ClosedState before rendering | Add broader live component tests. |
+| 86 | New-Bar Tick Contract | PARTIAL | New Analysis Bar detection commits ClosedState before live processing | Add mature forecast resolution/online-state tests. |
 | 87 | Heavy Trigger Contract | PARTIAL | reason mask and slices | Add candidate job lifecycle. |
 | 88 | History Revision Contract | PARTIAL | revision detection plus retained-output candidate rebuild | Add explicit revised-history runtime proof. |
 | 89 | Stale Result Protection | PARTIAL | fingerprint/version checks plus stale-candidate rejection guard | Add explicit stale candidate runtime test. |
@@ -121,7 +121,6 @@
 
 ## Current Highest-Risk Work Queue
 
-1. Dedicated ClosedState / LiveState objects.
-2. Display-state and revised-history runtime proof.
-3. Full feature, volatility, regime, adaptive weights, latency-aware score.
-4. Lightweight Multi-Scale Sequence Expert and true Hybrid ensemble.
+1. Display-state and revised-history runtime proof.
+2. Full feature, volatility, regime, adaptive weights, latency-aware score.
+3. Lightweight Multi-Scale Sequence Expert and true Hybrid ensemble.

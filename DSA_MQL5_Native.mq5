@@ -62,6 +62,7 @@
 #property indicator_width10 1
 
 #include "Core\\InputContract.mqh"
+#include "Core\\StateRegistry.mqh"
 #include "Runtime\\TickScheduler.mqh"
 #include "Visual\\VisualRenderer.mqh"
 #include "Adaptation\\AdaptiveEngine.mqh"
@@ -146,6 +147,8 @@ DSARuntimeSchedulerState RuntimeState;
 DSAInputContract InputContract;
 DSAAdaptiveTuningState AdaptiveTuning;
 DSAAdaptiveJobState AdaptiveJob;
+DSAClosedState ClosedState;
+DSALiveState LiveState;
 bool DSA_RetainedOutputAvailable = false;
 bool DSA_CandidateBuildActive = false;
 bool DSA_CandidateRejected = false;
@@ -273,6 +276,8 @@ void DSA_ResetBuffers()
    DSA_CandidateHistoryFingerprint = "";
    DSA_CandidateBuildTotal = 0;
    DSA_CandidateStateVersion = 0;
+   DSA_ResetClosedState(ClosedState);
+   DSA_ResetLiveState(LiveState);
 }
 
 void DSA_SetCandidateSeries()
@@ -406,6 +411,39 @@ bool DSA_CandidateBuildMatches(const int rates_total)
            DSA_CandidateHistoryFingerprint == RuntimeState.history_fingerprint &&
            DSA_CandidateBuildTotal == rates_total &&
            DSA_CandidateStateVersion == RuntimeState.active_state_version);
+}
+
+bool DSA_CommitClosedStateFromMainBuffers(const int index,
+                                          const datetime &time[],
+                                          const string transition)
+{
+   return DSA_CommitClosedStateFromBuffers(ClosedState,index,time,
+                                          CalcTarget,CalcForecast,
+                                          BufferAdaptiveTrend,BufferSignal,
+                                          BufferUpperBand,BufferLowerBand,
+                                          BufferUncertaintyUpper,BufferUncertaintyLower,
+                                          BufferRegimeColor,CalcQuality,CalcModelScore,
+                                          CalcDrift,CalcVolatility,CalcSlope,
+                                          CalcSafeModeScore,CalcStressScore,CalcBarFingerprint,
+                                          RuntimeState.active_state_version,transition);
+}
+
+void DSA_BeginLiveStateFromClosed(const datetime live_bar_time)
+{
+   DSA_BeginLiveState(LiveState,ClosedState,live_bar_time,RuntimeState.active_state_version);
+}
+
+bool DSA_CaptureLiveStateFromMainBuffers(const int index,const datetime &time[])
+{
+   return DSA_CaptureLiveStateFromBuffers(LiveState,index,time,
+                                         CalcTarget,CalcForecast,
+                                         BufferAdaptiveTrend,BufferSignal,
+                                         BufferUpperBand,BufferLowerBand,
+                                         BufferUncertaintyUpper,BufferUncertaintyLower,
+                                         BufferRegimeColor,CalcQuality,CalcModelScore,
+                                         CalcDrift,CalcVolatility,CalcSlope,
+                                         CalcSafeModeScore,CalcStressScore,CalcBarFingerprint,
+                                         RuntimeState.active_state_version);
 }
 
 bool DSA_HasRetainedOutput()
@@ -646,6 +684,7 @@ void DSA_ProcessAnalysisCommitBar(const int index,
                       CalcConformalRadius,CalcPacf,CalcSafeModeScore,CalcStressScore,
                       CalcForecastH2,CalcForecastH4,CalcForecastH8,CalcHorizonGrowth,
                       CalcRidgeState,CalcBarFingerprint,true);
+   DSA_CommitClosedStateFromMainBuffers(index,time,"analysis_commit");
 }
 
 void DSA_HoldClosedAnalysisState(const int index,
@@ -692,6 +731,7 @@ void DSA_HoldClosedAnalysisState(const int index,
    CalcHorizonGrowth[index] = CalcHorizonGrowth[source];
    CalcRidgeState[index] = CalcRidgeState[source];
    CalcBarFingerprint[index] = DSA_BarRevisionFingerprint(index,rates_total,time,open,high,low,close,tick_volume,spread);
+   DSA_CommitClosedStateFromMainBuffers(index,time,"analysis_hold");
 }
 
 void DSA_CommitCandidateBuffers(const int rates_total)
@@ -783,6 +823,7 @@ void DSA_ProcessHistoricalSlice(const int rates_total,
       }
       DSA_MarkBuildComplete(RuntimeState);
       DSA_RetainedOutputAvailable = true;
+      DSA_CommitClosedStateFromMainBuffers(1,time,"build_complete");
    }
 }
 
@@ -848,19 +889,28 @@ void DSA_ProcessLivePath(const int rates_total,
    if(rates_total < 1)
       return;
 
+   DSA_BeginLiveStateFromClosed(time[0]);
    DSA_ProcessBar(0,rates_total,true,time,open,high,low,close,tick_volume,spread);
+   DSA_CaptureLiveStateFromMainBuffers(0,time);
+
+   const double render_target = (LiveState.frame.valid ? LiveState.frame.target : CalcTarget[0]);
+   const double render_forecast = (LiveState.frame.valid ? LiveState.frame.forecast : CalcForecast[0]);
+   const double render_lower = (LiveState.frame.valid ? LiveState.frame.uncertainty_lower : BufferUncertaintyLower[0]);
+   const double render_upper = (LiveState.frame.valid ? LiveState.frame.uncertainty_upper : BufferUncertaintyUpper[0]);
+   const double render_slope = (LiveState.frame.valid ? LiveState.frame.slope : CalcSlope[0]);
+   const double render_score = (LiveState.frame.valid ? LiveState.frame.model_score : CalcModelScore[0]);
 
    DSA_RenderForecastObjects(InputContract,
-                             time[0],
-                             CalcTarget[0],
-                             CalcForecast[0],
-                             BufferUncertaintyLower[0],
-                             BufferUncertaintyUpper[0],
-                             CalcSlope[0],
-                             MathMax(BufferUncertaintyUpper[0] - CalcForecast[0],_Point),
-                             MathMax(CalcHorizonGrowth[0],1.0),
-                             CalcModelScore[0],
-                             RuntimeState.runtime_load);
+                              time[0],
+                              render_target,
+                              render_forecast,
+                              render_lower,
+                              render_upper,
+                              render_slope,
+                              MathMax(render_upper - render_forecast,_Point),
+                              MathMax(CalcHorizonGrowth[0],1.0),
+                              render_score,
+                              RuntimeState.runtime_load);
 }
 
 int OnInit()
@@ -872,6 +922,8 @@ int OnInit()
    DSA_RuntimeInit(RuntimeState);
    DSA_InitAdaptiveTuning(AdaptiveTuning);
    DSA_InitAdaptiveJob(AdaptiveJob);
+   DSA_ResetClosedState(ClosedState);
+   DSA_ResetLiveState(LiveState);
    DSA_DeleteChartObjectsByPrefix(DSA_OBJECT_PREFIX);
    return INIT_SUCCEEDED;
 }
