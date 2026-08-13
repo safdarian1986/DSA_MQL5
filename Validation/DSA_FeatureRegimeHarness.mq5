@@ -13,6 +13,9 @@ bool RollingMetricsOk = false;
 bool AdaptiveStressOk = false;
 bool AdaptiveApprovalOk = false;
 bool AdaptiveRejectOk = false;
+bool ModelDetailOk = false;
+bool ConformalDriftSafeOk = false;
+bool InputFingerprintOk = false;
 
 void DSA_RecordFailure(const string message)
 {
@@ -314,6 +317,51 @@ void DSA_RunFeatureRegimeHarness()
       DSA_RecordFailure("adaptive candidate was not rejected when evidence was insufficient");
    ++HarnessChecks;
 
+   DSAInputContract display_a;
+   DSAInputContract display_b;
+   DSA_BuildInputContract(display_a,"Host chart symbol",DSA_DATA_OHLC,PERIOD_CURRENT,PERIOD_CURRENT,
+                          PERIOD_D1,DSA_MODEL_ADAPTIVE,true,true,true,DSA_VISUAL_FULL);
+   DSA_BuildInputContract(display_b,"Host chart symbol",DSA_DATA_OHLC,PERIOD_CURRENT,PERIOD_CURRENT,
+                          PERIOD_D1,DSA_MODEL_ADAPTIVE,false,false,false,DSA_VISUAL_BASIC);
+   InputFingerprintOk = (display_a.fingerprint == display_b.fingerprint &&
+                         display_a.historical_display != display_b.historical_display &&
+                         display_a.forecast_display != display_b.forecast_display &&
+                         display_a.event_display != display_b.event_display);
+   if(!InputFingerprintOk)
+      DSA_RecordFailure("display-only inputs changed analytical fingerprint");
+   ++HarnessChecks;
+
+   ModelDetailOk = (calm_model.holt_forecast != EMPTY_VALUE &&
+                    calm_model.kalman_forecast != EMPTY_VALUE &&
+                    calm_model.ridge_forecast != EMPTY_VALUE &&
+                    MathAbs(calm_model.holt_trend) > 0.0 &&
+                    MathAbs(calm_model.kalman_slope) > 0.0 &&
+                    calm_model.runtime_cost_score >= 0.0 &&
+                    calm_model.volatility_stress >= 0.0 &&
+                    calm_model.horizon_growth >= 1.0);
+   if(!ModelDetailOk)
+      DSA_RecordFailure("model detail fields did not expose Holt, Kalman, Ridge, runtime, and horizon state");
+   ++HarnessChecks;
+
+   DSAInputContract safe_contract;
+   DSA_BuildInputContract(safe_contract,"Host chart symbol",DSA_DATA_OHLC,PERIOD_CURRENT,PERIOD_CURRENT,
+                          PERIOD_D1,DSA_MODEL_SAFE_MODE,true,true,true,DSA_VISUAL_FULL);
+   DSAModelSnapshot safe_model;
+   DSA_ComputeModels(0,ArraySize(time),safe_contract,feature,open_values,high_values,low_values,close_values,
+                     target_buffer,trend_buffer,trend_buffer,forecast_buffer,
+                     forecast_h2_buffer,forecast_h4_buffer,forecast_h8_buffer,
+                     volatility_buffer,quality_buffer,upper_buffer,lower_buffer,absolute_error_buffer,
+                     regime_buffer,ridge_state_buffer,1.0,1.0,0.05,true,safe_model);
+   ConformalDriftSafeOk = (safe_model.safe_mode &&
+                           safe_model.interval_radius >= calm_model.interval_radius &&
+                           DSA_HasValue(validation.coverage_rate) &&
+                           DSA_HasValue(validation.rolling_rmse) &&
+                           validation.drift_score >= 0.0 &&
+                           validation.drift_score <= 1.0);
+   if(!ConformalDriftSafeOk)
+      DSA_RecordFailure("conformal, drift, and safe-mode evidence was incomplete");
+   ++HarnessChecks;
+
    HarnessDone = true;
    Print("DSA feature-regime harness completed. failures=",HarnessFailures,
          " checks=",HarnessChecks,
@@ -324,6 +372,9 @@ void DSA_RunFeatureRegimeHarness()
          " adaptive_stress=",AdaptiveStressOk,
          " adaptive_approval=",AdaptiveApprovalOk,
          " adaptive_reject=",AdaptiveRejectOk,
+         " model_detail=",ModelDetailOk,
+         " conformal_drift_safe=",ConformalDriftSafeOk,
+         " input_fingerprint=",InputFingerprintOk,
          " coverage_rate=",validation.coverage_rate,
          " runtime_cost=",loaded_model.runtime_cost_score);
 }
@@ -349,5 +400,8 @@ double OnTester()
            RollingMetricsOk &&
            AdaptiveStressOk &&
            AdaptiveApprovalOk &&
-           AdaptiveRejectOk ? 1.0 : 0.0);
+           AdaptiveRejectOk &&
+           ModelDetailOk &&
+           ConformalDriftSafeOk &&
+           InputFingerprintOk ? 1.0 : 0.0);
 }
