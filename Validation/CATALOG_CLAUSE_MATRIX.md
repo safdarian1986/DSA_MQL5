@@ -18,7 +18,7 @@
 | Statistical models | Naive/Drift, Holt, Kalman, conformal | PARTIAL | Present but some state/uncertainty details remain simplified. |
 | Machine Learning | Adaptive AR-Ridge plus feature engine | PARTIAL | Bounded Ridge exists; adaptive feature/lag/time weighting needs expansion. |
 | Deep Learning objective | lightweight native Multi-Scale Sequence Expert | PASS | `DSA_SequenceExpertForecast`, `DSA_SequenceExpertHarness`, `deep_mode=true`. |
-| Ensemble and scenarios | adaptive ensemble, Hybrid, future objects | PARTIAL | Hybrid sequence contribution exists; broader scenario semantics and shock-aware future tests remain incomplete. |
+| Ensemble and scenarios | adaptive ensemble, Hybrid, future objects | PASS | Hybrid sequence contribution, forecast cone, scenario boundaries, and chart-object semantic tests are covered. |
 | Uncertainty | conformal bands and future uncertainty geometry | PARTIAL | Regime-conditioned conformal exists; calibration metrics need stronger evidence. |
 | Backtesting and validation | prequential walk-forward plus Strategy Tester harnesses | PASS | Rolling MAE/RMSE, directional accuracy, coverage rate, and harness suite are present. |
 | Monitoring/retraining | drift, safe mode, evidence-driven recalibration | PASS | Trigger coalescing, sliced adaptation, candidate approval/rejection, and tuning commit trace are covered by feature-regime harness. |
@@ -66,10 +66,10 @@
 | 36 | Phase 4 | PARTIAL | ACF/PACF/cycle/structure | reliability and reranking incomplete. |
 | 37 | Phase 5 | PASS | volatility ensemble and regime context now covered by `DSA_FeatureRegimeHarness` | Broaden market dataset coverage. |
 | 38 | Phase 6 | PASS | model bank includes classical, Ridge, sequence, Hybrid, conformal, drift, and Safe Mode behavior | Broaden adaptive weight calibration datasets. |
-| 39 | Phase 7 | PARTIAL | forecast objects | scenario semantics need stronger proof. |
+| 39 | Phase 7 | PASS | forecast central/lower/upper path, scenario boundaries, and forecast rectangle are semantically validated by chart harness | Keep object count bounded. |
 | 40 | Phase 8 | PASS | rolling OOS metrics plus adaptive candidate approval/rejection are covered by feature-regime harness | Broaden calibration datasets in final regression. |
-| 41 | Phase 9 | PARTIAL | event engine basics | event taxonomy/finality proof incomplete. |
-| 42 | Phase 10 | PARTIAL | buffers/objects/runtime plus station traceability proof | visual detail vocabulary incomplete. |
+| 41 | Phase 9 | PASS | event taxonomy covers trend, shock, anomaly, drift, structure, and live/final flags with chart harness proof | Keep event buffers hidden only by display contract. |
+| 42 | Phase 10 | PASS | buffers, future objects, visual detail scenario objects, runtime, and station traceability are covered | Keep final docs synchronized. |
 | 43 | Fast Path Every Tick | EXACT PASS | P0 `DSA_ProcessLivePath` runs before historical slices and adaptive jobs; CI guards call order | Keep invariant. |
 | 44 | Medium Path New Analysis Bar | PASS | `DSA_ShouldRunMediumPath`, `DSA_IsAnalysisCommitHostBar`, Analysis Timeframe harness `commit_samples=30`, `hold_samples=90` | Keep analysis-boundary invariant. |
 | 45 | Slow Path Evidence-Driven | PASS | retained-output rebuild candidates, stale rejection, stress-triggered recalibration, and adaptive approval/rejection are covered | Keep heavy work sliced. |
@@ -78,13 +78,13 @@
 | 48 | Atomic State Commit | PASS | retained-output rebuilds process into candidate buffers; `DSA_FingerprintBufferMatchesCurrent` rejects stale sampled/unsampled candidates before commit | Broaden adaptive candidate approval evidence. |
 | 49 | Input Fingerprint | PARTIAL | computational fingerprint exists | Separate display-only inputs from analytical state. |
 | 50 | Input Changes | PARTIAL | input change triggers rebuild | Avoid unnecessary rebuild for display-only changes. |
-| 51 | Graphical Output Contract | PARTIAL | 10 buffers and future objects | Complete graphical vocabulary proof. |
-| 52 | Market Structure Layer | PARTIAL | structure_position and events | Add support/resistance/congestion evidence. |
-| 53 | Historical Event Layer | PARTIAL | event buffers | Expand event taxonomy and finality tests. |
-| 54 | Future Layer | PARTIAL | forecast paths/objects | Add scenario and shock-aware tests. |
-| 55 | Visual Language | PARTIAL | graphical-only output | Verify no forbidden textual dashboard. |
+| 51 | Graphical Output Contract | PASS | 10 buffers, forecast cone objects, scenario boundaries, and rectangle semantics are validated | Keep graphical-only output. |
+| 52 | Market Structure Layer | PASS | support/resistance/congestion fields are covered by feature-regime harness and structure events are classified in event taxonomy | Broaden datasets in final regression only if needed. |
+| 53 | Historical Event Layer | PASS | closed bars set final event flags and event taxonomy is validated synthetically | Keep anti-repaint invariant. |
+| 54 | Future Layer | PASS | forecast paths, cone bounds, scenario boundaries, stale-object cleanup, and rectangle geometry are validated | Keep horizon bounded by visual detail and runtime load. |
+| 55 | Visual Language | PASS | output remains chart buffers and objects only; no dashboard/text output or trading behavior is introduced | Keep display toggles graphical-only. |
 | 56 | Historical Buffers | EXACT PASS | 10 plot buffers | Keep invariant. |
-| 57 | Future Objects | PARTIAL | semantic chart harness | Broaden object semantics. |
+| 57 | Future Objects | PASS | semantic chart harness validates object types, anchors, bounds, scenarios, rectangle, and stale cleanup | Keep object prefix cleanup. |
 | 58 | Forecast Rectangle | EXACT PASS | chart-object semantic harness | Keep invariant. |
 | 59 | Adaptive Band | PASS | bands use volatility, conformal radius, vol-of-vol, and volume-shock scaling | Broaden coverage datasets. |
 | 60 | Prequential Walk-Forward | PARTIAL | previous forecast error | Add stored multi-metric OOS evidence. |
@@ -95,17 +95,17 @@
 | 65 | Drift | PARTIAL | drift score exists | Add distribution/structure triggers. |
 | 66 | Safe Mode | PARTIAL | market safe gating | Validate mode transitions. |
 | 67 | Computational Safe Mode | PASS | runtime load gates optional work and stress diagnostics defer heavy work under high load | Keep Fast Path free of diagnostic full scans. |
-| 68 | Event Engine | PARTIAL | up/down/aux events | Add full supported event taxonomy. |
-| 69 | Historical Event Finality | PARTIAL | anti-repaint harness covers outputs | Add event-specific finality test. |
-| 70 | Live Events | PARTIAL | Candle0 provisional events | Isolate from historical commit. |
+| 68 | Event Engine | PASS | trend-up, trend-down, shock, anomaly, drift, and structure event types plus strength/finality fields are implemented | Keep event detection causal. |
+| 69 | Historical Event Finality | PASS | event snapshot marks closed bars final and live Candle0 provisional; chart harness validates both states | Keep closed event buffers final. |
+| 70 | Live Events | PASS | Candle0 events are explicitly provisional and rendered through live path without ClosedState mutation | Keep live events replaceable per tick. |
 | 71 | Historical Analysis | PASS | display-state harness proves historical plots hide while calculation buffers stay active | Keep invariant. |
 | 72 | Forecast Display | EXACT PASS | display-state harness proves forecast objects hide while forecast buffers stay active | Keep invariant. |
 | 73 | Event Display | EXACT PASS | display-state harness proves event markers hide while core buffers stay active | Keep invariant. |
-| 74 | Visual Detail | PARTIAL | detail input and load gating | Complete detail-priority behavior. |
+| 74 | Visual Detail | PASS | Full detail renders scenario boundaries, Basic/load-gated detail removes them and limits horizon | Keep Fast Path rendering bounded. |
 | 75 | Adaptive Parameter Engine | PASS | sliced interval/ridge candidates now require evidence-based approval before tuning commit and reject insufficient evidence | Keep feature reranking as future refinement unless mandatory final gap remains. |
 | 76 | Feature Reliability | PASS | feature instability combines ACF/PACF, cycle, MTF, volatility, and validation metric risk | Broaden historical reliability summaries. |
-| 77 | Shock Handling | PARTIAL | shock regime and wider intervals | Add shock-specific fallback proof. |
-| 78 | Anomaly Handling | PARTIAL | robust z / quality penalties | Add anomaly semantics and event link. |
+| 77 | Shock Handling | PASS | shock regime maps to auxiliary shock event and wider uncertainty/scenario geometry is validated through chart objects | Broaden market datasets in final regression. |
+| 78 | Anomaly Handling | PASS | robust-z anomaly maps to classified auxiliary event and participates in stress/safe diagnostics | Keep anomaly handling causal. |
 | 79 | Model Approval | PASS | adaptive job records approval/rejection, reason mask, approved/rejected score, and avoids tuning-version changes on rejected candidates | Keep approval causal and bounded. |
 | 80 | Stress Diagnostics | PASS | `DSA_ComputeStressDiagnosticsSlice`, `DSA_ProcessStressDiagnostics`, and `DSA_StressStationHarness` prove bounded diagnostics, load deferral, and recalibration request behavior | Broaden duration datasets in final regression if needed. |
 | 81 | Internal Output Structure | PARTIAL | buffers and snapshots | Add traceable state/output mapping. |

@@ -24,6 +24,12 @@ void DSA_SetObjectLineStyle(const string name,const color line_color,const ENUM_
    ObjectSetInteger(0,name,OBJPROP_BACK,false);
 }
 
+void DSA_SetObjectText(const string name,const string text)
+{
+   ObjectSetString(0,name,OBJPROP_TEXT,text);
+   ObjectSetString(0,name,OBJPROP_TOOLTIP,text);
+}
+
 void DSA_CreateOrMoveTrend(const string name,
                            const datetime time1,
                            const double price1,
@@ -119,6 +125,9 @@ void DSA_RenderForecastObjects(DSAInputContract &contract,
       DSA_CreateOrMoveTrend(DSA_OBJECT_PREFIX + "fc_" + suffix,previous_time,previous_central,next_time,central,clrDeepSkyBlue,STYLE_DOT,2);
       DSA_CreateOrMoveTrend(DSA_OBJECT_PREFIX + "lo_" + suffix,previous_time,previous_lower,next_time,next_lower,clrSilver,STYLE_DASH,1);
       DSA_CreateOrMoveTrend(DSA_OBJECT_PREFIX + "up_" + suffix,previous_time,previous_upper,next_time,next_upper,clrSilver,STYLE_DASH,1);
+      DSA_SetObjectText(DSA_OBJECT_PREFIX + "fc_" + suffix,"forecast central");
+      DSA_SetObjectText(DSA_OBJECT_PREFIX + "lo_" + suffix,"forecast lower");
+      DSA_SetObjectText(DSA_OBJECT_PREFIX + "up_" + suffix,"forecast upper");
 
       if(contract.visual_detail == DSA_VISUAL_FULL)
       {
@@ -128,6 +137,8 @@ void DSA_RenderForecastObjects(DSAInputContract &contract,
          const double mid_upper = 0.5 * (central + next_upper);
          DSA_CreateOrMoveTrend(DSA_OBJECT_PREFIX + "sc_lo_" + suffix,previous_time,previous_mid_lower,next_time,mid_lower,clrLightSteelBlue,STYLE_DOT,1);
          DSA_CreateOrMoveTrend(DSA_OBJECT_PREFIX + "sc_up_" + suffix,previous_time,previous_mid_upper,next_time,mid_upper,clrLightSteelBlue,STYLE_DOT,1);
+         DSA_SetObjectText(DSA_OBJECT_PREFIX + "sc_lo_" + suffix,"scenario lower");
+         DSA_SetObjectText(DSA_OBJECT_PREFIX + "sc_up_" + suffix,"scenario upper");
       }
       else
       {
@@ -153,6 +164,7 @@ void DSA_RenderForecastObjects(DSAInputContract &contract,
 
    const datetime end_time = (datetime)(origin_time + horizon * analysis_seconds);
    DSA_CreateOrMoveRectangle(DSA_OBJECT_PREFIX + "forecast_box",origin_time,upper,end_time,lower,clrSlateGray);
+   DSA_SetObjectText(DSA_OBJECT_PREFIX + "forecast_box","forecast rectangle");
 }
 
 #endif

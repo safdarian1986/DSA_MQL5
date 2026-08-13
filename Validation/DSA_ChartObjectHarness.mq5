@@ -5,12 +5,16 @@
 #define DSA_CHART_HARNESS_INDICATOR "DSA_MQL5_Native"
 #define DSA_CHART_OBJECT_PREFIX "DSA_MQL5_"
 
+#include "..\Events\EventEngine.mqh"
+
 int IndicatorHandle = INVALID_HANDLE;
 int HarnessFailures = 0;
 bool HarnessFirstReadOk = false;
 bool HarnessObjectsSeen = false;
 bool HarnessChartAttached = false;
 bool HarnessSemanticOk = false;
+bool HarnessEventTaxonomyOk = false;
+bool HarnessSemanticChecked = false;
 
 int DSA_CountProjectObjects()
 {
@@ -57,6 +61,79 @@ datetime DSA_ObjectTime(const string name,const int point)
 double DSA_ObjectPrice(const string name,const int point)
 {
    return ObjectGetDouble(0,name,OBJPROP_PRICE,point);
+}
+
+int DSA_ObjectWidth(const string name)
+{
+   return (int)ObjectGetInteger(0,name,OBJPROP_WIDTH,0);
+}
+
+bool DSA_ValidateEventTaxonomy()
+{
+   const int total = 8;
+   double high[];
+   double low[];
+   double trend[];
+   ArrayResize(high,total);
+   ArrayResize(low,total);
+   ArrayResize(trend,total);
+   ArraySetAsSeries(high,true);
+   ArraySetAsSeries(low,true);
+   ArraySetAsSeries(trend,true);
+
+   for(int i = 0; i < total; ++i)
+   {
+      high[i] = 110.0 + (double)i;
+      low[i] = 100.0 - (double)i;
+      trend[i] = 100.0;
+   }
+
+   DSAFeatureSnapshot feature;
+   DSAModelSnapshot model;
+   DSAValidationSnapshot validation;
+   DSAEventSnapshot event;
+   ZeroMemory(feature);
+   ZeroMemory(model);
+   ZeroMemory(validation);
+
+   feature.target = 104.0;
+   feature.candle_range = 2.0;
+   feature.robust_z = 4.2;
+   feature.structure_position = 0.96;
+   feature.quality_score = 80.0;
+   model.regime = DSA_REGIME_SHOCK;
+   model.band_radius = 2.0;
+   model.interval_radius = 2.0;
+   validation.drift_score = 0.45;
+   DSA_DetectEvents(1,total,high,low,feature,model,validation,trend,event);
+   const bool closed_shock = (event.final_event &&
+                              !event.provisional_event &&
+                              event.auxiliary_event &&
+                              event.event_type == DSA_EVENT_SHOCK &&
+                              event.event_strength > 0.0);
+
+   model.regime = DSA_REGIME_TREND_UP;
+   feature.target = 112.0;
+   feature.robust_z = 0.5;
+   feature.structure_position = 0.50;
+   validation.drift_score = 0.10;
+   DSA_DetectEvents(0,total,high,low,feature,model,validation,trend,event);
+   const bool live_trend = (event.provisional_event &&
+                            !event.final_event &&
+                            event.up_pressure &&
+                            event.event_type == DSA_EVENT_TREND_UP &&
+                            DSA_HasValue(event.up_price));
+
+   model.regime = DSA_REGIME_RANGE;
+   feature.target = 100.0;
+   feature.robust_z = 3.8;
+   validation.drift_score = 0.10;
+   DSA_DetectEvents(2,total,high,low,feature,model,validation,trend,event);
+   const bool anomaly = (event.final_event &&
+                         event.auxiliary_event &&
+                         event.event_type == DSA_EVENT_ANOMALY);
+
+   return (closed_shock && live_trend && anomaly);
 }
 
 bool DSA_ValidateForecastObjects()
@@ -120,6 +197,15 @@ bool DSA_ValidateForecastObjects()
       ok = false;
    }
 
+   if(DSA_ObjectWidth(DSA_CHART_OBJECT_PREFIX + "fc_1") < 2 ||
+      ObjectFind(0,DSA_CHART_OBJECT_PREFIX + "sc_lo_1") < 0 ||
+      ObjectFind(0,DSA_CHART_OBJECT_PREFIX + "sc_up_1") < 0 ||
+      ObjectFind(0,DSA_CHART_OBJECT_PREFIX + "forecast_box") < 0)
+   {
+      DSA_RecordFailure("forecast object visual vocabulary is missing");
+      ok = false;
+   }
+
    if(ObjectFind(0,DSA_CHART_OBJECT_PREFIX + "fc_49") >= 0 ||
       ObjectFind(0,DSA_CHART_OBJECT_PREFIX + "sc_lo_49") >= 0 ||
       ObjectFind(0,DSA_CHART_OBJECT_PREFIX + "sc_up_49") >= 0)
@@ -146,6 +232,9 @@ int OnInit()
 
    Print("DSA chart-object harness initialized for ",_Symbol," ",EnumToString(_Period),
          " attached=",HarnessChartAttached);
+   HarnessEventTaxonomyOk = DSA_ValidateEventTaxonomy();
+   if(!HarnessEventTaxonomyOk)
+      DSA_RecordFailure("event taxonomy and live/final flags failed synthetic validation");
    return INIT_SUCCEEDED;
 }
 
@@ -157,6 +246,7 @@ void OnDeinit(const int reason)
    Print("DSA chart-object harness completed. failures=",HarnessFailures,
          " first_read=",HarnessFirstReadOk,
          " objects_seen=",HarnessObjectsSeen,
+         " event_taxonomy=",HarnessEventTaxonomyOk,
          " reason=",reason);
 }
 
@@ -209,8 +299,9 @@ void OnTick()
       Print("DSA chart-object harness project objects seen. count=",object_count);
    }
 
-   if(HarnessObjectsSeen && !HarnessSemanticOk)
+   if(HarnessObjectsSeen && !HarnessSemanticOk && !HarnessSemanticChecked)
    {
+      HarnessSemanticChecked = true;
       HarnessSemanticOk = DSA_ValidateForecastObjects();
       if(HarnessSemanticOk)
          Print("DSA chart-object harness semantic object validation succeeded. count=",object_count);
@@ -219,5 +310,10 @@ void OnTick()
 
 double OnTester()
 {
-   return (HarnessFailures == 0 && HarnessFirstReadOk && HarnessChartAttached && HarnessObjectsSeen && HarnessSemanticOk ? 1.0 : 0.0);
+   return (HarnessFailures == 0 &&
+           HarnessFirstReadOk &&
+           HarnessChartAttached &&
+           HarnessObjectsSeen &&
+           HarnessSemanticOk &&
+           HarnessEventTaxonomyOk ? 1.0 : 0.0);
 }
