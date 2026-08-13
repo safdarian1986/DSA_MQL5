@@ -114,6 +114,7 @@ DSARuntimeSchedulerState RuntimeState;
 DSAInputContract InputContract;
 DSAAdaptiveTuningState AdaptiveTuning;
 DSAAdaptiveJobState AdaptiveJob;
+bool DSA_RetainedOutputAvailable = false;
 
 void DSA_SetPlotDefaults()
 {
@@ -227,6 +228,30 @@ void DSA_ResetBuffers()
    ArrayInitialize(CalcHorizonGrowth,EMPTY_VALUE);
    ArrayInitialize(CalcRidgeState,EMPTY_VALUE);
    ArrayInitialize(CalcBarFingerprint,EMPTY_VALUE);
+   DSA_RetainedOutputAvailable = false;
+}
+
+bool DSA_HasRetainedOutput()
+{
+   return (DSA_RetainedOutputAvailable &&
+           ArraySize(BufferAdaptiveTrend) > 0 &&
+           DSA_HasValue(BufferAdaptiveTrend[0]));
+}
+
+void DSA_PrepareBackgroundBuild(const int rates_total,const string history_fingerprint)
+{
+   if(!(RuntimeState.rebuild_pending || !RuntimeState.build_complete))
+      return;
+
+   const bool candidate_matches = (DSA_CanCommitCandidate(RuntimeState,InputContract.fingerprint,history_fingerprint) &&
+                                   RuntimeState.build_total == rates_total &&
+                                   RuntimeState.build_cursor >= 0);
+   if(candidate_matches)
+      return;
+
+   if(!DSA_HasRetainedOutput())
+      DSA_ResetBuffers();
+   DSA_StartProgressiveBuild(RuntimeState,rates_total,InputContract.fingerprint,history_fingerprint);
 }
 
 void DSA_ProcessBar(const int index,
@@ -352,7 +377,10 @@ void DSA_ProcessHistoricalSlice(const int rates_total,
    RuntimeState.processed_count += processed;
 
    if(RuntimeState.build_cursor < 1)
+   {
       DSA_MarkBuildComplete(RuntimeState);
+      DSA_RetainedOutputAvailable = true;
+   }
 }
 
 bool DSA_AuditHistoricalRevisionSlice(const int rates_total,
@@ -390,7 +418,8 @@ bool DSA_AuditHistoricalRevisionSlice(const int rates_total,
          if(MathAbs(stored - current) > 0.5)
          {
             DSA_CoalesceTrigger(RuntimeState,DSA_REASON_HISTORY_REVISION);
-            DSA_ResetBuffers();
+            if(!DSA_HasRetainedOutput())
+               DSA_ResetBuffers();
             DSA_StartProgressiveBuild(RuntimeState,rates_total,InputContract.fingerprint,history_fingerprint);
             return true;
          }
@@ -490,23 +519,17 @@ int OnCalculate(const int rates_total,
    if(history_changed)
       DSA_CoalesceTrigger(RuntimeState,DSA_REASON_HISTORY_REVISION);
 
-   if(RuntimeState.rebuild_pending || !RuntimeState.build_complete)
-   {
-      if(!DSA_CanCommitCandidate(RuntimeState,InputContract.fingerprint,history_fingerprint) ||
-         RuntimeState.build_total != rates_total ||
-         RuntimeState.build_cursor < 0)
-      {
-         DSA_ResetBuffers();
-         DSA_StartProgressiveBuild(RuntimeState,rates_total,InputContract.fingerprint,history_fingerprint);
-      }
-      DSA_ProcessHistoricalSlice(rates_total,time,open,high,low,close,tick_volume,spread);
-   }
-   else if(RuntimeState.last_bar_time != 0 && RuntimeState.last_bar_time != time[0])
-   {
-      DSA_ProcessBar(1,rates_total,false,time,open,high,low,close,tick_volume,spread);
-   }
+   const bool new_bar = (RuntimeState.last_bar_time != 0 && RuntimeState.last_bar_time != time[0]);
 
+   DSA_PrepareBackgroundBuild(rates_total,history_fingerprint);
    DSA_ProcessLivePath(rates_total,time,open,high,low,close,tick_volume,spread);
+
+   if(new_bar && RuntimeState.build_complete && !RuntimeState.rebuild_pending)
+      DSA_ProcessBar(1,rates_total,false,time,open,high,low,close,tick_volume,spread);
+
+   if(RuntimeState.rebuild_pending || !RuntimeState.build_complete)
+      DSA_ProcessHistoricalSlice(rates_total,time,open,high,low,close,tick_volume,spread);
+
    const bool revision_detected = DSA_AuditHistoricalRevisionSlice(rates_total,history_fingerprint,
                                                                    time,open,high,low,close,tick_volume,spread);
    if(!revision_detected && RuntimeState.build_complete && RuntimeState.recalibration_pending && RuntimeState.runtime_load < 0.85)

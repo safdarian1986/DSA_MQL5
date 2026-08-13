@@ -5,7 +5,7 @@
 - Catalog: `Catalog/DSA_MQL5_EN.docx`, freshly extracted from OOXML.
 - Scientific reference: `Catalog/DataSience-en.docx`, treated as upstream objective, not a literal heavyweight implementation mandate.
 - Owner decision: Deep Learning and Hybrid are no longer permanent specification gaps. They must be implemented as lightweight, causal, MQL5-native multi-scale sequence behavior without conventional online neural training.
-- Current stage: independent Selection Data channels implemented and validated.
+- Current stage: independent Selection Data channels and Fast Path priority guard implemented and validated.
 
 ## DataScience Crosswalk
 
@@ -31,10 +31,10 @@
 | 1 | Final System Architecture | PARTIAL | Core modules exist | Complete Closed/Live state and atomic commit. |
 | 2 | MT5 Tool Definition | EXACT PASS | non-trading indicator, static scan | Keep invariant. |
 | 3 | Exact User Input Contract | EXACT PASS | 10 `input` declarations | Keep invariant. |
-| 4 | Tick-Safe Update Contract | PARTIAL | scheduler and runtime load exist | Move Fast Path before background slices. |
-| 5 | Anti-Freeze and Anti-Lock Contract | PARTIAL | bounded work budget | Prove no lower-priority task blocks P0. |
+| 4 | Tick-Safe Update Contract | PARTIAL | live path now precedes historical/adaptive background slices | Complete Closed/Live state and candidate commit. |
+| 5 | Anti-Freeze and Anti-Lock Contract | PARTIAL | bounded work budget plus P0-before-P8 source guard | Add stronger runtime stress proof. |
 | 6 | Adaptive Runtime Budget | PARTIAL | latency EWMA and load budget | Include broader runtime cost in model score. |
-| 7 | Runtime Priority | MISMATCH | `OnCalculate` runs rebuild slice before live path | Reorder P0/P1 ahead of P8. |
+| 7 | Runtime Priority | PARTIAL | `OnCalculate` prepares rebuild cheaply, then runs P0 before P8 slices | Complete Analysis Bar and lower-priority queue semantics. |
 | 8 | Runtime Busy Guard | PARTIAL | `runtime_busy`, single active flags | Strengthen single-flight commit behavior. |
 | 9 | Trigger Coalescing | PARTIAL | reason mask merge | Add stale candidate rejection evidence. |
 | 10 | Selection Data Contract | EXACT PASS | `DSASelectionChannels`, selection harness | Keep independent channels. |
@@ -70,12 +70,12 @@
 | 40 | Phase 8 | PARTIAL | OOS/conformal basics | metrics and approval incomplete. |
 | 41 | Phase 9 | PARTIAL | event engine basics | event taxonomy/finality proof incomplete. |
 | 42 | Phase 10 | PARTIAL | buffers/objects/runtime | station traceability and visual detail incomplete. |
-| 43 | Fast Path Every Tick | MISMATCH | live path runs after rebuild slice | Make P0 first. |
+| 43 | Fast Path Every Tick | EXACT PASS | P0 `DSA_ProcessLivePath` runs before historical slices and adaptive jobs; CI guards call order | Keep invariant. |
 | 44 | Medium Path New Analysis Bar | MISMATCH | host-chart new-bar drives commit | Detect new Analysis Bar explicitly. |
 | 45 | Slow Path Evidence-Driven | PARTIAL | adaptive/rebuild triggers | Complete candidate lifecycle. |
 | 46 | Slow Work Slicing | PARTIAL | budgeted slices | Add stronger single-flight/candidate proof. |
 | 47 | Full Historical Pass | EXACT PASS | adversarial full-history harness | Keep invariant. |
-| 48 | Atomic State Commit | MISSING | buffers cleared before rebuild | Implement candidate build and atomic switch. |
+| 48 | Atomic State Commit | MISSING | retained-output reset guard exists, but no separate candidate buffers | Implement candidate build and atomic switch. |
 | 49 | Input Fingerprint | PARTIAL | computational fingerprint exists | Separate display-only inputs from analytical state. |
 | 50 | Input Changes | PARTIAL | input change triggers rebuild | Avoid unnecessary rebuild for display-only changes. |
 | 51 | Graphical Output Contract | PARTIAL | 10 buffers and future objects | Complete graphical vocabulary proof. |
@@ -112,18 +112,17 @@
 | 82 | Code Architecture | PARTIAL | consolidated modules | Add real state components only where behavior needs them. |
 | 83 | Standard Station Contract | PARTIAL | station manifest metadata | Link station fields to execution/tests. |
 | 84 | State Mutation | PARTIAL | buffers mutate in processing | Enforce live/closed mutation permissions. |
-| 85 | Normal Tick Contract | MISMATCH | background work can precede P0 | Reorder normal tick path. |
+| 85 | Normal Tick Contract | PARTIAL | P0 live path precedes historical/adaptive background work | Complete Closed/Live mutation permissions. |
 | 86 | New-Bar Tick Contract | MISMATCH | host new-bar only | Implement Analysis Bar commit sequence. |
 | 87 | Heavy Trigger Contract | PARTIAL | reason mask and slices | Add candidate job lifecycle. |
-| 88 | History Revision Contract | PARTIAL | revision detection exists | Preserve previous output until candidate commit. |
-| 89 | Stale Result Protection | PARTIAL | fingerprint/version checks | Prevent blanking and reject stale candidates. |
+| 88 | History Revision Contract | PARTIAL | revision detection plus retained-output reset guard | Preserve previous output fully until candidate commit. |
+| 89 | Stale Result Protection | PARTIAL | fingerprint/version checks plus guarded rebuild start | Add explicit stale candidate rejection tests. |
 | 90 | Ready-for-Production Contract | MISSING | current audit not complete | Requires zero mandatory PARTIAL/MISMATCH/MISSING. |
 
 ## Current Highest-Risk Work Queue
 
 1. Analysis Timeframe as the real primary analytical timeframe.
-2. Fast Path priority before rebuild/adaptive slices.
-3. ClosedState / LiveState isolation.
-4. Previous-output hold and candidate/atomic commit.
-5. Full feature, volatility, regime, adaptive weights, latency-aware score.
-6. Lightweight Multi-Scale Sequence Expert and true Hybrid ensemble.
+2. ClosedState / LiveState isolation.
+3. Previous-output hold and candidate/atomic commit.
+4. Full feature, volatility, regime, adaptive weights, latency-aware score.
+5. Lightweight Multi-Scale Sequence Expert and true Hybrid ensemble.

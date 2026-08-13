@@ -108,6 +108,19 @@ jobs:
             throw 'Expected independent selection-channel contract support.'
           }
 
+          $prepareIndex = $indicatorHeader.IndexOf('DSA_PrepareBackgroundBuild(rates_total,history_fingerprint);')
+          $liveIndex = $indicatorHeader.IndexOf('DSA_ProcessLivePath(rates_total,time,open,high,low,close,tick_volume,spread);')
+          $sliceIndex = $indicatorHeader.IndexOf('DSA_ProcessHistoricalSlice(rates_total,time,open,high,low,close,tick_volume,spread);')
+          if ($prepareIndex -lt 0 -or $liveIndex -lt 0 -or $sliceIndex -lt 0 -or
+              $prepareIndex -gt $liveIndex -or $liveIndex -gt $sliceIndex) {
+            throw 'Expected OnCalculate to run lightweight build preparation, then P0 live path, then historical background slices.'
+          }
+
+          if ($indicatorHeader -notmatch 'DSA_RetainedOutputAvailable' -or
+              $indicatorHeader -notmatch 'if\(!DSA_HasRetainedOutput\(\)\)\s+DSA_ResetBuffers\(\);') {
+            throw 'Expected retained-output guard before rebuild buffer resets.'
+          }
+
           $mqlFiles = Get-ChildItem -Recurse -Force -File -Include '*.mq5','*.mqh' |
             Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' }
 
@@ -155,6 +168,8 @@ jobs:
             throw 'Completion audit must preserve the current in-progress readiness status.'
           }
 
-          if ($audit -notmatch 'lightweight native sequence expert' -or $audit -notmatch 'Independent Selection Data channels') {
-            throw 'Completion audit must preserve the owner-resolved Deep/Hybrid roadmap and Selection Data status.'
+          if ($audit -notmatch 'lightweight native sequence expert' -or
+              $audit -notmatch 'Independent Selection Data channels' -or
+              $audit -notmatch 'Fast Path priority') {
+            throw 'Completion audit must preserve the owner-resolved Deep/Hybrid roadmap, Selection Data, and Fast Path status.'
           }
