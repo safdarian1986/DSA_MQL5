@@ -21,6 +21,7 @@ struct DSAStationDefinition
    string mutation_permission;
    string dependencies;
    string validation_tag;
+   string source_owner;
    int cost_class;
    int runtime_priority;
    bool can_run_on_live_candle0;
@@ -87,6 +88,35 @@ int DSA_StationCostClass(const bool heavy,const bool deferred)
    return DSA_STATION_COST_LIGHT;
 }
 
+string DSA_StationSourceOwner(const int id)
+{
+   if(id == 1 || id == 3 || id == 6)
+      return "Core/InputContract.mqh";
+   if(id == 5 || id == 50)
+      return "Core/StateRegistry.mqh / DSA_MQL5_Native.mq5";
+   if(id == 2 || id == 7 || id == 8 || id == 10)
+      return "Data/DataContract.mqh / Features/FeatureEngine.mqh";
+   if(id == 4 || id == 9)
+      return "Data/MTFAlignment.mqh / DSA_MQL5_Native.mq5";
+   if(id >= 11 && id <= 20)
+      return "Features/FeatureEngine.mqh";
+   if(id >= 21 && id <= 35)
+      return "Models/ModelBank.mqh";
+   if(id == 36)
+      return "Validation/ValidationEngine.mqh";
+   if(id == 37 || id == 40 || id == 41)
+      return "Models/ModelBank.mqh / Validation/ValidationEngine.mqh";
+   if(id == 38 || id == 39)
+      return "Adaptation/AdaptiveEngine.mqh / DSA_MQL5_Native.mq5";
+   if(id >= 42 && id <= 45)
+      return "Events/EventEngine.mqh / DSA_MQL5_Native.mq5";
+   if(id >= 46 && id <= 48)
+      return "Visual/VisualRenderer.mqh / DSA_MQL5_Native.mq5";
+   if(id == 49)
+      return "Runtime/TickScheduler.mqh / DSA_MQL5_Native.mq5";
+   return "DSA_MQL5_Native.mq5";
+}
+
 void DSA_SetStation(DSAStationDefinition &station,
                     const int id,
                     const string module,
@@ -112,6 +142,7 @@ void DSA_SetStation(DSAStationDefinition &station,
    station.mutation_permission = DSA_StationMutationPermission(live,historical,closed_bar);
    station.dependencies = input_role + " / " + algorithm;
    station.validation_tag = DSA_StationValidationTag(id);
+   station.source_owner = DSA_StationSourceOwner(id);
    station.cost_class = DSA_StationCostClass(heavy,deferred);
    station.runtime_priority = runtime_priority;
    station.can_run_on_live_candle0 = live;
@@ -194,7 +225,8 @@ bool DSA_ValidateStationDefinition(DSAStationDefinition &station)
       StringLen(station.error_state) <= 0 ||
       StringLen(station.mutation_permission) <= 0 ||
       StringLen(station.dependencies) <= 0 ||
-      StringLen(station.validation_tag) <= 0)
+      StringLen(station.validation_tag) <= 0 ||
+      StringLen(station.source_owner) <= 0)
       return false;
    if(station.runtime_priority < 0 || station.runtime_priority > 8)
       return false;

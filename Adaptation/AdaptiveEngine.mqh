@@ -138,6 +138,7 @@ void DSA_ComputeAdaptiveDiagnostics(DSAFeatureSnapshot &feature,
    const double memory_instability = DSA_Clamp((MathAbs(feature.acf1 - feature.acf2) + MathAbs(feature.pacf2)) * 0.5,0.0,1.0);
    const double cycle_instability = DSA_Clamp(feature.cycle_score * model.disagreement,0.0,1.0);
    const double volatility_instability = DSA_Clamp(0.60 * feature.vol_of_vol + 0.40 * feature.volume_shock,0.0,1.0);
+   const double reliability_risk = 1.0 - DSA_Clamp(feature.feature_reliability,0.0,1.0);
    const double metric_risk = (DSA_HasValue(validation.rolling_rmse) ?
                                DSA_Clamp(validation.rolling_rmse / MathMax(model.interval_radius * 2.0,_Point),0.0,1.0) :
                                validation.drift_score);
@@ -145,10 +146,11 @@ void DSA_ComputeAdaptiveDiagnostics(DSAFeatureSnapshot &feature,
                                  DSA_Clamp(MathAbs(0.90 - validation.coverage_rate) / 0.90,0.0,1.0) :
                                  1.0 - validation.coverage_hit);
 
-   adaptive.feature_instability = DSA_Clamp(0.45 * memory_instability +
-                                            0.20 * cycle_instability +
-                                            0.20 * mtf_risk +
-                                            0.15 * volatility_instability,
+   adaptive.feature_instability = DSA_Clamp(0.32 * memory_instability +
+                                            0.18 * cycle_instability +
+                                            0.16 * mtf_risk +
+                                            0.14 * volatility_instability +
+                                            0.20 * reliability_risk,
                                             0.0,1.0);
 
    adaptive.safe_mode_score = DSA_Clamp(0.25 * quality_risk +

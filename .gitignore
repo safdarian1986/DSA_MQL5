@@ -16,6 +16,7 @@ compile-*.log
 !compile-evidence-20260813-193640-*.log
 !compile-evidence-20260813-204752-*.log
 !compile-evidence-20260813-215123-*.log
+!compile-evidence-20260813-224845-*.log
 
 # MetaTrader tester/runtime local output
 Tester/

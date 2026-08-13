@@ -19,31 +19,54 @@ struct DSAFeatureSnapshot
    double oc_midpoint;
    double log_return;
    double absolute_return;
+   double positive_return;
+   double negative_return;
+   double difference_return;
    double candle_range;
    double candle_body;
+   double upper_wick;
+   double lower_wick;
+   double body_range_ratio;
    double close_location;
    double gap;
    double quality_score;
    double robust_z;
    double volatility;
+   double ew_volatility;
    double mad_volatility;
+   double range_volatility;
    double parkinson_volatility;
    double vol_of_vol;
    double cusum_pressure;
+   double tick_volume_value;
+   double real_volume_value;
+   double relative_volume;
    double volume_shock;
+   double trend_level;
    double slope;
+   double trend_acceleration;
    double persistence;
    double range_efficiency;
    double acf1;
    double acf2;
    double pacf2;
+   int adaptive_lag;
    double cycle_score;
+   double cycle_stability;
    double structure_position;
    double support_level;
    double resistance_level;
    double congestion_score;
+   int hour_of_day;
+   int day_of_week;
+   int session_code;
    double mtf_target;
    double mtf_deviation;
+   double causal_correlation;
+   double ridge_shrinkage;
+   double coefficient_stability;
+   double permutation_degradation;
+   double feature_reliability;
    bool mtf_available;
    bool multi_channel;
    int selected_channel_count;
@@ -265,6 +288,34 @@ double DSA_SampledVolumeShock(const int index,
    return DSA_Clamp(((double)MathMax(current_volume,0) / average_volume - 1.0) / 3.0,0.0,1.0);
 }
 
+double DSA_SampledRelativeVolume(const int index,
+                                 const int rates_total,
+                                 const long current_volume,
+                                 const long &tick_volume[])
+{
+   const int available = rates_total - index - 2;
+   if(available < 8)
+      return 1.0;
+
+   const int max_samples = 128;
+   const int stride = MathMax(1,(int)MathCeil((double)available / (double)max_samples));
+   double sum = 0.0;
+   int count = 0;
+   for(int j = index + 1; j < rates_total; j += stride)
+   {
+      if(tick_volume[j] <= 0)
+         continue;
+      sum += (double)tick_volume[j];
+      ++count;
+   }
+
+   if(count < 8)
+      return 1.0;
+
+   const double average_volume = MathMax(sum / (double)count,1.0);
+   return DSA_Clamp((double)MathMax(current_volume,0) / average_volume,0.0,8.0);
+}
+
 void DSA_SampledStructureContext(const int index,
                                  const int rates_total,
                                  const double &high[],
@@ -300,6 +351,54 @@ void DSA_SampledStructureContext(const int index,
    const double context_range = MathMax(resistance_level - support_level,_Point);
    const double average_range = range_sum / (double)count;
    congestion_score = DSA_Clamp(average_range * 4.0 / context_range,0.0,1.0);
+}
+
+int DSA_AdaptiveFeatureLag(DSAFeatureSnapshot &feature)
+{
+   double evidence = 0.45 * MathAbs(feature.acf1) +
+                     0.25 * MathAbs(feature.pacf2) +
+                     0.20 * feature.cycle_score +
+                     0.10 * feature.persistence;
+   evidence = DSA_Clamp(evidence,0.0,1.0);
+   return (int)MathRound(DSA_Clamp(2.0 + 6.0 * evidence,2.0,8.0));
+}
+
+int DSA_SessionCodeFromHour(const int hour)
+{
+   if(hour >= 7 && hour < 13)
+      return 1;
+   if(hour >= 13 && hour < 21)
+      return 2;
+   return 0;
+}
+
+void DSA_ComputeFeatureReliability(DSAFeatureSnapshot &feature)
+{
+   feature.causal_correlation = DSA_Clamp(0.65 * MathAbs(feature.acf1) +
+                                          0.25 * MathAbs(feature.pacf2) +
+                                          0.10 * (feature.mtf_available ? 1.0 - DSA_Clamp(MathAbs(feature.mtf_deviation) / 4.0,0.0,1.0) : 0.50),
+                                          0.0,1.0);
+   feature.ridge_shrinkage = DSA_Clamp(1.0 -
+                                       0.45 * DSA_Clamp(feature.vol_of_vol / 2.0,0.0,1.0) -
+                                       0.35 * DSA_Clamp(feature.volume_shock,0.0,1.0) -
+                                       0.20 * (1.0 - DSA_Clamp(feature.quality_score / 100.0,0.0,1.0)),
+                                       0.0,1.0);
+   feature.coefficient_stability = DSA_Clamp(1.0 -
+                                             0.55 * MathAbs(feature.acf1 - feature.acf2) -
+                                             0.25 * DSA_Clamp(feature.vol_of_vol / 2.0,0.0,1.0) -
+                                             0.20 * MathAbs(feature.mtf_deviation) / 4.0,
+                                             0.0,1.0);
+   feature.permutation_degradation = DSA_Clamp(0.45 * feature.range_efficiency +
+                                               0.25 * MathAbs(feature.cusum_pressure) +
+                                               0.20 * feature.causal_correlation +
+                                               0.10 * (1.0 - DSA_Clamp(feature.congestion_score,0.0,1.0)),
+                                               0.0,1.0);
+   feature.feature_reliability = DSA_Clamp(0.28 * feature.causal_correlation +
+                                           0.22 * feature.ridge_shrinkage +
+                                           0.22 * feature.coefficient_stability +
+                                           0.18 * feature.permutation_degradation +
+                                           0.10 * DSA_Clamp(feature.quality_score / 100.0,0.0,1.0),
+                                           0.0,1.0);
 }
 
 void DSA_BuildFeatureSnapshot(const int index,
@@ -359,6 +458,9 @@ void DSA_BuildFeatureSnapshot(const int index,
    feature.oc_midpoint = 0.5 * (source_open + source_close);
    feature.candle_range = MathMax(source_high - source_low,_Point);
    feature.candle_body = MathAbs(source_close - source_open);
+   feature.upper_wick = MathMax(source_high - MathMax(source_open,source_close),0.0);
+   feature.lower_wick = MathMax(MathMin(source_open,source_close) - source_low,0.0);
+   feature.body_range_ratio = DSA_Clamp(DSA_SafeDiv(feature.candle_body,feature.candle_range,0.0),0.0,1.0);
    feature.close_location = DSA_SafeDiv(source_close - source_low,feature.candle_range,0.5);
 
    double previous_target = feature.target;
@@ -369,11 +471,18 @@ void DSA_BuildFeatureSnapshot(const int index,
 
    feature.log_return = DSA_LogReturn(feature.target,previous_target);
    feature.absolute_return = MathAbs(feature.target - previous_target);
+   feature.difference_return = feature.target - previous_target;
+   feature.positive_return = MathMax(feature.difference_return,0.0);
+   feature.negative_return = MathMax(-feature.difference_return,0.0);
    feature.gap = (index + 1 < rates_total ? MathAbs(source_open - previous_target) : 0.0);
    feature.mad_volatility = DSA_SampledMadVolatility(index,rates_total,target_buffer,MathMax(feature.absolute_return,_Point));
+   feature.range_volatility = feature.candle_range;
    feature.parkinson_volatility = MathMax(feature.candle_range / MathSqrt(4.0 * MathLog(2.0)),_Point);
    feature.vol_of_vol = DSA_SampledVolOfVol(index,rates_total,high,low,feature.candle_range);
    feature.cusum_pressure = DSA_SampledCusumPressure(index,rates_total,target_buffer,MathMax(feature.mad_volatility,_Point));
+   feature.tick_volume_value = (double)MathMax(source_tick_volume,0);
+   feature.real_volume_value = 0.0;
+   feature.relative_volume = DSA_SampledRelativeVolume(index,rates_total,source_tick_volume,tick_volume);
    feature.volume_shock = DSA_SampledVolumeShock(index,rates_total,source_tick_volume,tick_volume);
    DSA_SampledStructureContext(index,rates_total,high,low,source_high,source_low,
                                feature.support_level,feature.resistance_level,feature.congestion_score);
@@ -394,6 +503,7 @@ void DSA_BuildFeatureSnapshot(const int index,
                                  MathMax(ensemble_volatility,channel_volatility * 0.35) * volatility_multiplier,
                                  0.08);
    feature.volatility = MathMax(feature.volatility,_Point);
+   feature.ew_volatility = feature.volatility;
 
    double previous_slope = 0.0;
    if(index + 1 < rates_total && DSA_HasValue(slope_buffer[index + 1]))
@@ -401,6 +511,8 @@ void DSA_BuildFeatureSnapshot(const int index,
    feature.slope = DSA_Ewma(previous_slope,feature.target - previous_target,0.10);
 
    const double previous_trend = (index + 1 < rates_total && DSA_HasValue(trend_buffer[index + 1]) ? trend_buffer[index + 1] : previous_target);
+   feature.trend_level = previous_trend;
+   feature.trend_acceleration = feature.slope - previous_slope;
    feature.robust_z = DSA_SafeDiv(feature.target - previous_trend,MathMax(feature.volatility,_Point),0.0);
    feature.persistence = (feature.slope == 0.0 ? 0.0 : DSA_Clamp(MathAbs(feature.slope) / MathMax(feature.volatility,_Point),0.0,3.0) / 3.0);
    feature.range_efficiency = DSA_Clamp(DSA_SafeDiv(MathAbs(source_close - source_open),feature.candle_range,0.0),0.0,1.0);
@@ -418,6 +530,12 @@ void DSA_BuildFeatureSnapshot(const int index,
                                0.0);
    feature.pacf2 = DSA_Clamp(feature.pacf2,-1.0,1.0);
    feature.cycle_score = DSA_SampledCycleScore(index,rates_total,target_buffer);
+   feature.adaptive_lag = DSA_AdaptiveFeatureLag(feature);
+   feature.cycle_stability = DSA_Clamp(1.0 -
+                                       0.45 * MathAbs(feature.acf1 - feature.acf2) -
+                                       0.35 * DSA_Clamp(feature.vol_of_vol / 2.0,0.0,1.0) -
+                                       0.20 * MathAbs(feature.cycle_score - MathAbs(feature.acf2)),
+                                       0.0,1.0);
    const double structure_range = (feature.multi_channel ? MathMax(feature.selected_spread,_Point) : feature.candle_range);
    const double structure_low = (feature.multi_channel ? feature.selected_lower : source_low);
    const double broad_support = MathMin(feature.support_level,structure_low);
@@ -428,6 +546,17 @@ void DSA_BuildFeatureSnapshot(const int index,
    feature.mtf_available = false;
    feature.mtf_target = feature.target;
    feature.mtf_deviation = 0.0;
+   feature.causal_correlation = 0.0;
+   feature.ridge_shrinkage = 0.0;
+   feature.coefficient_stability = 0.0;
+   feature.permutation_degradation = 0.0;
+   feature.feature_reliability = 0.0;
+
+   MqlDateTime feature_time;
+   TimeToStruct(feature.primary_analysis_time,feature_time);
+   feature.hour_of_day = feature_time.hour;
+   feature.day_of_week = feature_time.day_of_week;
+   feature.session_code = DSA_SessionCodeFromHour(feature_time.hour);
 
    DSAMtfSnapshot mtf_snapshot;
    if(use_primary_analysis)
@@ -447,6 +576,8 @@ void DSA_BuildFeatureSnapshot(const int index,
 
    if(index + 1 < rates_total && DSA_HasValue(quality_buffer[index + 1]))
       feature.quality_score = DSA_Ewma(quality_buffer[index + 1],feature.quality_score,0.15);
+
+   DSA_ComputeFeatureReliability(feature);
 }
 
 #endif

@@ -12,12 +12,12 @@ The workspace contains a pure MQL5, non-trading MetaTrader 5 custom indicator im
 - `Core/`: common helpers, input contract, and ClosedState/LiveState registry.
 - `Runtime/`: tick scheduler, coalesced triggers, progressive build cursor, stable closed-history fingerprint identity, bounded revision audit, and runtime-load gates.
 - `Data/`: Selection Data channel contract, OHLCV/spread handling, Analysis Timeframe alignment, MTF causality, and revision fingerprints.
-- `Features/`: causal feature, volatility, regime, structure, MTF, and quality snapshots.
-- `Models/`: Naive/Drift, Adaptive Holt, Kalman, Adaptive AR-Ridge, adaptive ensemble, conformal uncertainty, drift/safe-mode scoring, runtime cost, and the native sequence expert.
+- `Features/`: causal price, return, candle, trend, volatility, volume, memory, cycle, time/session, MTF, structure, quality, and feature-reliability snapshots.
+- `Models/`: Naive/Drift, Adaptive Holt, explicit Kalman state contract, Adaptive AR-Ridge lag/feature/time/horizon evidence, per-expert evidence approval, adaptive ensemble, conformal uncertainty, drift/safe-mode scoring, runtime cost, and the native sequence expert.
 - `Adaptation/`: evidence-driven adaptive approval/rejection and bounded stress diagnostics.
-- `Events/`: causal event taxonomy with final/provisional semantics.
-- `Visual/`: 10 plot buffers plus bounded future forecast, uncertainty, and scenario objects.
-- `Stations/`: 50-station manifest with state, dependency, mutation, priority, cost, owner, and validation metadata.
+- `Events/`: 8-item causal event taxonomy with final/provisional, immutable historical identity, and no-future-input semantics.
+- `Visual/`: 10 plot buffers plus bounded future forecast, uncertainty, scenario, support/resistance, congestion, regime, and event objects.
+- `Stations/`: 50-station manifest with state, dependency, mutation, priority, cost, actual source owner, and validation metadata.
 - `Validation/`: compile/runtime harnesses and tester configs.
 
 ## Deep And Hybrid
@@ -28,15 +28,14 @@ No conventional online neural training, Python runtime, DLL, external API, or mo
 
 ## Final Evidence
 
-- Final compile stamp: `20260813-215123`
+- Final compile stamp: `20260813-224845`
 - Compile scope: production indicator plus 14 harnesses
 - Compile result: all 15 logs report `0 errors, 0 warnings`
-- Final runtime summary: `Validation/final-runtime-regression-20260813-215123.json`
-- Runtime scope: 14 Strategy Tester configs
+- Final runtime summary: `Validation/final-runtime-regression-20260813-224845.json`
 - Runtime result: all 14 configs report `OnTester result 1` and `failures=0`
 
-Key runtime proofs include Selection Data independence, Analysis Timeframe primary path, full-history processing, anti-repaint, MTF causality, history revision and stale-candidate rejection, ClosedState/LiveState isolation, display toggles, model modes, Deep mode, Hybrid mode, feature/regime scoring, adaptive approval/rejection, stress diagnostics, station traceability, event taxonomy, chart-object semantics, and adversarial full-history coverage.
+Key runtime proofs include Selection Data independence, Analysis Timeframe primary path, full-history processing, anti-repaint, MTF causality, history revision and stale-candidate rejection, ClosedState/LiveState isolation, display toggles, model modes, Deep mode, Hybrid mode, complete feature families, feature reliability, Kalman contract, Ridge adaptivity, per-expert evidence/approval, adaptive approval/rejection, stress diagnostics, station source-owner traceability, 8-event taxonomy, chart-object semantics, and adversarial full-history coverage.
 
 ## Residual Limits
 
-History revision detection is bounded and progressive for tick safety; candidate commits remain guarded by closed-bar fingerprints. AR-Ridge and sequence logic are intentionally bounded native MQL5 implementations. The project does not execute trades and does not claim profitability.
+History revision detection is bounded and progressive for tick safety; candidate commits remain guarded by closed-bar fingerprints and high-load finalization deferral. AR-Ridge and sequence logic are intentionally bounded native MQL5 implementations. Real volume remains conditional on platform availability; tick volume is the fallback causal source. The project does not execute trades and does not claim profitability.

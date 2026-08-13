@@ -1,0 +1,72 @@
+[
+  {
+    "Config": "RuntimeTester.ini",
+    "Ok": true,
+    "Evidence": "OnTester result 1; DSA runtime harness completed. failures=0"
+  },
+  {
+    "Config": "RuntimeTesterSelection.ini",
+    "Ok": true,
+    "Evidence": "OnTester result 1; DSA selection-data harness completed. failures=0"
+  },
+  {
+    "Config": "RuntimeTesterMtf.ini",
+    "Ok": true,
+    "Evidence": "OnTester result 1; DSA MTF causality harness completed. failures=0 samples=234"
+  },
+  {
+    "Config": "RuntimeTesterAnalysisTimeframe.ini",
+    "Ok": true,
+    "Evidence": "OnTester result 1; DSA analysis-timeframe harness completed. failures=0 samples=120 commit_samples=30 hold_samples=90"
+  },
+  {
+    "Config": "RuntimeTesterDisplay.ini",
+    "Ok": true,
+    "Evidence": "OnTester result 1; DSA display-state harness completed. failures=0 hidden_history=true forecast_hidden=true events_hidden=true"
+  },
+  {
+    "Config": "RuntimeTesterState.ini",
+    "Ok": true,
+    "Evidence": "OnTester result 1; DSA state-isolation harness completed. failures=0 checks=4"
+  },
+  {
+    "Config": "RuntimeTesterHistoryRevision.ini",
+    "Ok": true,
+    "Evidence": "OnTester result 1; DSA history-revision harness completed. failures=0 checks=7 stale_candidate_rejected=true unsampled_candidate_rejected=true"
+  },
+  {
+    "Config": "RuntimeTesterModes.ini",
+    "Ok": true,
+    "Evidence": "OnTester result 1; DSA model-mode harness completed. failures=0 modes=true,true,true,true,true,true"
+  },
+  {
+    "Config": "RuntimeTesterFeatureRegime.ini",
+    "Ok": true,
+    "Evidence": "OnTester result 1; DSA feature-regime harness completed. failures=0 checks=16 feature_families=true feature_reliability=true kalman_contract=true ridge_adaptivity=true expert_evidence=true model_approval=true"
+  },
+  {
+    "Config": "RuntimeTesterSequence.ini",
+    "Ok": true,
+    "Evidence": "OnTester result 1; DSA sequence-expert harness completed. failures=0 checks=4 sequence_forecast=true deep_mode=true hybrid_blend=true safe_suppresses_sequence=true"
+  },
+  {
+    "Config": "RuntimeTesterDeep.ini",
+    "Ok": true,
+    "Evidence": "OnTester result 1; DSA deep-learning harness completed. failures=0"
+  },
+  {
+    "Config": "RuntimeTesterStressStation.ini",
+    "Ok": true,
+    "Evidence": "OnTester result 1; DSA stress-station harness completed. failures=0 checks=5 station_manifest=true station_trace=true stress_diagnostics=true stress_recalibration=true bounded_slice=true stations=50"
+  },
+  {
+    "Config": "RuntimeTesterChart.ini",
+    "Ok": true,
+    "Evidence": "OnTester result 1; DSA chart-object harness completed. failures=0 objects_seen=true event_taxonomy=true"
+  },
+  {
+    "Config": "RuntimeTesterAdversarial.ini",
+    "Ok": true,
+    "Evidence": "OnTester result 1; DSA adversarial harness completed. failures=0 deep_bars=8437 full_history=true buffer_semantics=true anti_repaint=true"
+  }
+]

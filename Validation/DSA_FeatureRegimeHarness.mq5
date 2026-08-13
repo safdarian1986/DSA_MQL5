@@ -16,6 +16,12 @@ bool AdaptiveRejectOk = false;
 bool ModelDetailOk = false;
 bool ConformalDriftSafeOk = false;
 bool InputFingerprintOk = false;
+bool FeatureFamiliesOk = false;
+bool FeatureReliabilityOk = false;
+bool KalmanContractOk = false;
+bool RidgeAdaptivityOk = false;
+bool ExpertEvidenceOk = false;
+bool ModelApprovalOk = false;
 
 void DSA_RecordFailure(const string message)
 {
@@ -198,6 +204,51 @@ void DSA_RunFeatureRegimeHarness()
       DSA_RecordFailure("feature context did not expose volatility, volume, and structure fields");
    ++HarnessChecks;
 
+   FeatureFamiliesOk = (feature.ohlc_average != 0.0 &&
+                        feature.median_price != 0.0 &&
+                        feature.oc_midpoint != 0.0 &&
+                        DSA_HasValue(feature.log_return) &&
+                        DSA_HasValue(feature.positive_return) &&
+                        DSA_HasValue(feature.negative_return) &&
+                        DSA_HasValue(feature.difference_return) &&
+                        feature.upper_wick >= 0.0 &&
+                        feature.lower_wick >= 0.0 &&
+                        feature.body_range_ratio >= 0.0 &&
+                        DSA_HasValue(feature.trend_level) &&
+                        DSA_HasValue(feature.trend_acceleration) &&
+                        feature.ew_volatility > 0.0 &&
+                        feature.range_volatility > 0.0 &&
+                        feature.tick_volume_value > 0.0 &&
+                        feature.real_volume_value >= 0.0 &&
+                        feature.relative_volume > 0.0 &&
+                        feature.adaptive_lag >= 2 &&
+                        feature.adaptive_lag <= 8 &&
+                        feature.cycle_stability >= 0.0 &&
+                        feature.hour_of_day >= 0 &&
+                        feature.hour_of_day <= 23 &&
+                        feature.day_of_week >= 0 &&
+                        feature.day_of_week <= 6 &&
+                        feature.session_code >= 0 &&
+                        feature.session_code <= 2 &&
+                        feature.mtf_target != EMPTY_VALUE);
+   if(!FeatureFamiliesOk)
+      DSA_RecordFailure("catalog feature families are incomplete");
+   ++HarnessChecks;
+
+   FeatureReliabilityOk = (feature.causal_correlation >= 0.0 &&
+                           feature.causal_correlation <= 1.0 &&
+                           feature.ridge_shrinkage >= 0.0 &&
+                           feature.ridge_shrinkage <= 1.0 &&
+                           feature.coefficient_stability >= 0.0 &&
+                           feature.coefficient_stability <= 1.0 &&
+                           feature.permutation_degradation >= 0.0 &&
+                           feature.permutation_degradation <= 1.0 &&
+                           feature.feature_reliability >= 0.0 &&
+                           feature.feature_reliability <= 1.0);
+   if(!FeatureReliabilityOk)
+      DSA_RecordFailure("feature reliability evidence fields were invalid");
+   ++HarnessChecks;
+
    DSAModelSnapshot calm_model;
    DSA_ComputeModels(0,ArraySize(time),contract,feature,open_values,high_values,low_values,close_values,
                      target_buffer,trend_buffer,trend_buffer,forecast_buffer,
@@ -343,6 +394,51 @@ void DSA_RunFeatureRegimeHarness()
       DSA_RecordFailure("model detail fields did not expose Holt, Kalman, Ridge, runtime, and horizon state");
    ++HarnessChecks;
 
+   KalmanContractOk = (DSA_HasValue(calm_model.kalman_level) &&
+                       DSA_HasValue(calm_model.kalman_slope) &&
+                       DSA_HasValue(calm_model.kalman_forecast) &&
+                       DSA_HasValue(calm_model.kalman_innovation) &&
+                       DSA_HasValue(calm_model.kalman_residual) &&
+                       calm_model.kalman_state_uncertainty > 0.0 &&
+                       calm_model.kalman_trend_strength >= 0.0 &&
+                       calm_model.kalman_trend_strength <= 1.0);
+   if(!KalmanContractOk)
+      DSA_RecordFailure("kalman state contract fields were invalid");
+   ++HarnessChecks;
+
+   RidgeAdaptivityOk = (calm_model.ridge_adaptive_lag >= 2 &&
+                        calm_model.ridge_adaptive_lag <= 8 &&
+                        calm_model.ridge_feature_weight >= 0.0 &&
+                        calm_model.ridge_feature_weight <= 1.0 &&
+                        calm_model.ridge_time_weight > 0.0 &&
+                        calm_model.ridge_time_weight <= 1.0 &&
+                        calm_model.ridge_horizon_weight > 0.0 &&
+                        calm_model.ridge_horizon_weight <= 1.0 &&
+                        calm_model.ridge_adaptive_score >= 0.0 &&
+                        calm_model.ridge_adaptive_score <= 1.0);
+   if(!RidgeAdaptivityOk)
+      DSA_RecordFailure("adaptive ridge lag/feature/time/horizon evidence was invalid");
+   ++HarnessChecks;
+
+   ExpertEvidenceOk = (calm_model.naive_evidence.score > 0.0 &&
+                       calm_model.holt_evidence.score > 0.0 &&
+                       calm_model.kalman_evidence.score > 0.0 &&
+                       calm_model.ridge_evidence.score >= 0.0 &&
+                       calm_model.sequence_evidence.score >= 0.0 &&
+                       calm_model.expert_weight_naive >= 0.0 &&
+                       calm_model.expert_weight_holt >= 0.0 &&
+                       calm_model.expert_weight_kalman >= 0.0 &&
+                       calm_model.expert_weight_ridge >= 0.0 &&
+                       calm_model.expert_weight_sequence >= 0.0 &&
+                       DSA_CloseEnough(calm_model.expert_weight_naive +
+                                       calm_model.expert_weight_holt +
+                                       calm_model.expert_weight_kalman +
+                                       calm_model.expert_weight_ridge +
+                                       calm_model.expert_weight_sequence,1.0,1.0e-6));
+   if(!ExpertEvidenceOk)
+      DSA_RecordFailure("per-expert evidence weights were invalid");
+   ++HarnessChecks;
+
    DSAInputContract safe_contract;
    DSA_BuildInputContract(safe_contract,"Host chart symbol",DSA_DATA_OHLC,PERIOD_CURRENT,PERIOD_CURRENT,
                           PERIOD_D1,DSA_MODEL_SAFE_MODE,true,true,true,DSA_VISUAL_FULL);
@@ -362,6 +458,17 @@ void DSA_RunFeatureRegimeHarness()
       DSA_RecordFailure("conformal, drift, and safe-mode evidence was incomplete");
    ++HarnessChecks;
 
+   ModelApprovalOk = (calm_model.naive_evidence.approved &&
+                      calm_model.holt_evidence.approved &&
+                      calm_model.kalman_evidence.approved &&
+                      safe_model.naive_evidence.approved &&
+                      !safe_model.ridge_evidence.approved &&
+                      !safe_model.sequence_evidence.approved &&
+                      safe_model.expert_weight_sequence == 0.0);
+   if(!ModelApprovalOk)
+      DSA_RecordFailure("per-expert approval gates were invalid");
+   ++HarnessChecks;
+
    HarnessDone = true;
    Print("DSA feature-regime harness completed. failures=",HarnessFailures,
          " checks=",HarnessChecks,
@@ -374,6 +481,12 @@ void DSA_RunFeatureRegimeHarness()
          " adaptive_reject=",AdaptiveRejectOk,
          " model_detail=",ModelDetailOk,
          " conformal_drift_safe=",ConformalDriftSafeOk,
+         " feature_families=",FeatureFamiliesOk,
+         " feature_reliability=",FeatureReliabilityOk,
+         " kalman_contract=",KalmanContractOk,
+         " ridge_adaptivity=",RidgeAdaptivityOk,
+         " expert_evidence=",ExpertEvidenceOk,
+         " model_approval=",ModelApprovalOk,
          " input_fingerprint=",InputFingerprintOk,
          " coverage_rate=",validation.coverage_rate,
          " runtime_cost=",loaded_model.runtime_cost_score);
@@ -403,5 +516,11 @@ double OnTester()
            AdaptiveRejectOk &&
            ModelDetailOk &&
            ConformalDriftSafeOk &&
-           InputFingerprintOk ? 1.0 : 0.0);
+           InputFingerprintOk &&
+           FeatureFamiliesOk &&
+           FeatureReliabilityOk &&
+           KalmanContractOk &&
+           RidgeAdaptivityOk &&
+           ExpertEvidenceOk &&
+           ModelApprovalOk ? 1.0 : 0.0);
 }

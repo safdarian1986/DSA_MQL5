@@ -62,10 +62,16 @@ void DSA_RunStressStationHarness()
    DSAStationDefinition commit;
    DSAStationDefinition candidate;
    DSAStationDefinition history;
+   DSAStationDefinition ridge;
+   DSAStationDefinition event_station;
+   DSAStationDefinition visual;
    const bool trace_loaded = (DSA_GetStationDefinition(49,scheduler) &&
                               DSA_GetStationDefinition(50,commit) &&
                               DSA_GetStationDefinition(38,candidate) &&
-                              DSA_GetStationDefinition(4,history));
+                              DSA_GetStationDefinition(4,history) &&
+                              DSA_GetStationDefinition(29,ridge) &&
+                              DSA_GetStationDefinition(42,event_station) &&
+                              DSA_GetStationDefinition(46,visual));
    StationTraceOk = (trace_loaded &&
                      scheduler.runtime_priority == 0 &&
                      scheduler.cost_class == DSA_STATION_COST_LIGHT &&
@@ -81,7 +87,12 @@ void DSA_RunStressStationHarness()
                      StringLen(scheduler.validation_tag) > 0 &&
                      StringLen(commit.mutation_permission) > 0 &&
                      StringLen(candidate.dependencies) > 0 &&
-                     StringLen(history.required_state) > 0);
+                     StringLen(history.required_state) > 0 &&
+                     StringFind(ridge.source_owner,"Models/ModelBank.mqh") >= 0 &&
+                     StringFind(event_station.source_owner,"Events/EventEngine.mqh") >= 0 &&
+                     StringFind(visual.source_owner,"Visual/VisualRenderer.mqh") >= 0 &&
+                     StringFind(scheduler.source_owner,"Runtime/TickScheduler.mqh") >= 0 &&
+                     StringLen(commit.source_owner) > 0);
    if(!StationTraceOk)
       DSA_RecordFailure("station trace fields were incomplete for scheduler, commit, candidate, or history stations");
    ++HarnessChecks;

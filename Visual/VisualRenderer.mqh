@@ -73,6 +73,61 @@ void DSA_CreateOrMoveRectangle(const string name,
    ObjectSetInteger(0,name,OBJPROP_HIDDEN,true);
 }
 
+string DSA_EventTypeText(const int event_type)
+{
+   if(event_type == DSA_EVENT_TREND_CHANGE)
+      return "event trend change";
+   if(event_type == DSA_EVENT_REGIME_CHANGE)
+      return "event regime change";
+   if(event_type == DSA_EVENT_SHOCK)
+      return "event shock";
+   if(event_type == DSA_EVENT_ANOMALY)
+      return "event anomaly";
+   if(event_type == DSA_EVENT_BREAKOUT)
+      return "event breakout";
+   if(event_type == DSA_EVENT_UP_PRESSURE)
+      return "event up pressure";
+   if(event_type == DSA_EVENT_DOWN_PRESSURE)
+      return "event down pressure";
+   if(event_type == DSA_EVENT_SIGNAL_END)
+      return "event signal end";
+   return "event none";
+}
+
+color DSA_RegimeVisualColor(const int regime)
+{
+   if(regime == DSA_REGIME_TREND_UP)
+      return clrMediumSeaGreen;
+   if(regime == DSA_REGIME_TREND_DOWN)
+      return clrTomato;
+   if(regime == DSA_REGIME_VOLATILE)
+      return clrGold;
+   if(regime == DSA_REGIME_SHOCK)
+      return clrOrangeRed;
+   if(regime == DSA_REGIME_RANGE)
+      return clrSteelBlue;
+   return clrSlateGray;
+}
+
+color DSA_EventVisualColor(const int event_type)
+{
+   if(event_type == DSA_EVENT_SHOCK)
+      return clrOrangeRed;
+   if(event_type == DSA_EVENT_ANOMALY)
+      return clrGold;
+   if(event_type == DSA_EVENT_BREAKOUT)
+      return clrDeepSkyBlue;
+   if(event_type == DSA_EVENT_UP_PRESSURE)
+      return clrMediumSeaGreen;
+   if(event_type == DSA_EVENT_DOWN_PRESSURE)
+      return clrTomato;
+   if(event_type == DSA_EVENT_TREND_CHANGE || event_type == DSA_EVENT_REGIME_CHANGE)
+      return clrViolet;
+   if(event_type == DSA_EVENT_SIGNAL_END)
+      return clrSilver;
+   return clrDarkGray;
+}
+
 void DSA_RenderForecastObjects(DSAInputContract &contract,
                                const datetime origin_time,
                                const double origin_price,
@@ -83,7 +138,13 @@ void DSA_RenderForecastObjects(DSAInputContract &contract,
                                const double interval_radius,
                                const double horizon_growth,
                                const double model_score,
-                               const double runtime_load)
+                               const double runtime_load,
+                               const double support_level,
+                               const double resistance_level,
+                               const double congestion_score,
+                               const int regime,
+                               const int event_type,
+                               const double event_strength)
 {
    if(!contract.forecast_display)
    {
@@ -165,6 +226,37 @@ void DSA_RenderForecastObjects(DSAInputContract &contract,
    const datetime end_time = (datetime)(origin_time + horizon * analysis_seconds);
    DSA_CreateOrMoveRectangle(DSA_OBJECT_PREFIX + "forecast_box",origin_time,upper,end_time,lower,clrSlateGray);
    DSA_SetObjectText(DSA_OBJECT_PREFIX + "forecast_box","forecast rectangle");
+
+   if(contract.visual_detail == DSA_VISUAL_FULL)
+   {
+      const double safe_support = (DSA_HasValue(support_level) ? support_level : origin_price - interval_radius);
+      const double safe_resistance = (DSA_HasValue(resistance_level) ? resistance_level : origin_price + interval_radius);
+      const double lower_structure = MathMin(safe_support,safe_resistance);
+      const double upper_structure = MathMax(safe_support,safe_resistance);
+      const double marker_radius = MathMax(interval_radius * DSA_Clamp(0.35 + event_strength,0.35,1.35),_Point * 5.0);
+      DSA_CreateOrMoveTrend(DSA_OBJECT_PREFIX + "structure_support",origin_time,lower_structure,end_time,lower_structure,clrMediumSeaGreen,STYLE_DASH,1);
+      DSA_CreateOrMoveTrend(DSA_OBJECT_PREFIX + "structure_resistance",origin_time,upper_structure,end_time,upper_structure,clrTomato,STYLE_DASH,1);
+      DSA_CreateOrMoveRectangle(DSA_OBJECT_PREFIX + "congestion_box",origin_time,upper_structure,end_time,lower_structure,clrDimGray);
+      DSA_CreateOrMoveTrend(DSA_OBJECT_PREFIX + "regime_state",origin_time,origin_price,end_time,
+                            origin_price + slope * DSA_Clamp(1.0 + congestion_score,1.0,2.0),
+                            DSA_RegimeVisualColor(regime),STYLE_SOLID,2);
+      DSA_CreateOrMoveTrend(DSA_OBJECT_PREFIX + "event_marker",origin_time,origin_price - marker_radius,
+                            origin_time,origin_price + marker_radius,
+                            DSA_EventVisualColor(event_type),STYLE_SOLID,2);
+      DSA_SetObjectText(DSA_OBJECT_PREFIX + "structure_support","support");
+      DSA_SetObjectText(DSA_OBJECT_PREFIX + "structure_resistance","resistance");
+      DSA_SetObjectText(DSA_OBJECT_PREFIX + "congestion_box","congestion");
+      DSA_SetObjectText(DSA_OBJECT_PREFIX + "regime_state","regime");
+      DSA_SetObjectText(DSA_OBJECT_PREFIX + "event_marker",DSA_EventTypeText(event_type));
+   }
+   else
+   {
+      ObjectDelete(0,DSA_OBJECT_PREFIX + "structure_support");
+      ObjectDelete(0,DSA_OBJECT_PREFIX + "structure_resistance");
+      ObjectDelete(0,DSA_OBJECT_PREFIX + "congestion_box");
+      ObjectDelete(0,DSA_OBJECT_PREFIX + "regime_state");
+      ObjectDelete(0,DSA_OBJECT_PREFIX + "event_marker");
+   }
 }
 
 #endif

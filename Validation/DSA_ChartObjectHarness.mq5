@@ -98,6 +98,9 @@ bool DSA_ValidateEventTaxonomy()
 
    feature.target = 104.0;
    feature.candle_range = 2.0;
+   feature.volatility = 1.0;
+   feature.persistence = 0.25;
+   feature.feature_reliability = 0.65;
    feature.robust_z = 4.2;
    feature.structure_position = 0.96;
    feature.quality_score = 80.0;
@@ -110,30 +113,87 @@ bool DSA_ValidateEventTaxonomy()
                               !event.provisional_event &&
                               event.auxiliary_event &&
                               event.event_type == DSA_EVENT_SHOCK &&
-                              event.event_strength > 0.0);
+                              event.shock_event &&
+                              event.event_strength > 0.0 &&
+                              event.immutable_historical_decision &&
+                              !event.uses_future_inputs &&
+                              event.event_identity != 0);
 
    model.regime = DSA_REGIME_TREND_UP;
    feature.target = 112.0;
    feature.robust_z = 0.5;
    feature.structure_position = 0.50;
+   feature.trend_acceleration = 0.15;
    validation.drift_score = 0.10;
    DSA_DetectEvents(0,total,high,low,feature,model,validation,trend,event);
-   const bool live_trend = (event.provisional_event &&
-                            !event.final_event &&
-                            event.up_pressure &&
-                            event.event_type == DSA_EVENT_TREND_UP &&
-                            DSA_HasValue(event.up_price));
+   const bool live_up_pressure = (event.provisional_event &&
+                                  !event.final_event &&
+                                  event.up_pressure &&
+                                  event.event_type == DSA_EVENT_TREND_CHANGE &&
+                                  DSA_HasValue(event.up_price));
 
    model.regime = DSA_REGIME_RANGE;
    feature.target = 100.0;
    feature.robust_z = 3.8;
+   feature.trend_acceleration = 0.0;
    validation.drift_score = 0.10;
    DSA_DetectEvents(2,total,high,low,feature,model,validation,trend,event);
    const bool anomaly = (event.final_event &&
                          event.auxiliary_event &&
+                         event.anomaly_event &&
                          event.event_type == DSA_EVENT_ANOMALY);
 
-   return (closed_shock && live_trend && anomaly);
+   model.regime = DSA_REGIME_TREND_DOWN;
+   feature.target = 92.0;
+   feature.robust_z = 0.4;
+   feature.structure_position = 0.50;
+   feature.trend_acceleration = -0.20;
+   validation.drift_score = 0.10;
+   DSA_DetectEvents(3,total,high,low,feature,model,validation,trend,event);
+   const bool down_pressure = (event.down_pressure &&
+                               event.event_type == DSA_EVENT_TREND_CHANGE &&
+                               event.trend_change &&
+                               DSA_HasValue(event.down_price));
+
+   model.regime = DSA_REGIME_RANGE;
+   feature.target = 108.0;
+   feature.robust_z = 0.3;
+   feature.structure_position = 0.97;
+   feature.persistence = 0.45;
+   feature.trend_acceleration = 0.0;
+   validation.drift_score = 0.20;
+   DSA_DetectEvents(4,total,high,low,feature,model,validation,trend,event);
+   const bool breakout = (event.breakout_event &&
+                          event.event_type == DSA_EVENT_BREAKOUT);
+
+   feature.structure_position = 0.50;
+   feature.persistence = 0.30;
+   model.disagreement = 0.75;
+   validation.drift_score = 0.74;
+   DSA_DetectEvents(5,total,high,low,feature,model,validation,trend,event);
+   const bool regime_change = (event.regime_change &&
+                               event.event_type == DSA_EVENT_REGIME_CHANGE);
+
+   feature.persistence = 0.02;
+   model.disagreement = 0.55;
+   validation.drift_score = 0.20;
+   DSA_DetectEvents(6,total,high,low,feature,model,validation,trend,event);
+   const bool signal_end = (event.signal_end &&
+                            event.event_type == DSA_EVENT_SIGNAL_END);
+
+   trend[1] = 99.4;
+   model.regime = DSA_REGIME_TREND_UP;
+   feature.target = 100.0;
+   feature.persistence = 0.30;
+   feature.trend_acceleration = 0.0;
+   model.disagreement = 0.10;
+   DSA_DetectEvents(0,total,high,low,feature,model,validation,trend,event);
+   const bool up_pressure_only = (event.up_pressure &&
+                                  event.event_type == DSA_EVENT_UP_PRESSURE);
+
+   return (closed_shock && live_up_pressure && anomaly &&
+           down_pressure && breakout && regime_change &&
+           signal_end && up_pressure_only);
 }
 
 bool DSA_ValidateForecastObjects()
@@ -143,7 +203,7 @@ bool DSA_ValidateForecastObjects()
    if(project_count <= 0)
       return false;
 
-   if(project_count > 245)
+   if(project_count > 260)
    {
       DSA_RecordFailure("unbounded project object count");
       ok = false;
@@ -155,6 +215,11 @@ bool DSA_ValidateForecastObjects()
    ok = DSA_RequireObjectType(DSA_CHART_OBJECT_PREFIX + "forecast_box",OBJ_RECTANGLE) && ok;
    ok = DSA_RequireObjectType(DSA_CHART_OBJECT_PREFIX + "sc_lo_1",OBJ_TREND) && ok;
    ok = DSA_RequireObjectType(DSA_CHART_OBJECT_PREFIX + "sc_up_1",OBJ_TREND) && ok;
+   ok = DSA_RequireObjectType(DSA_CHART_OBJECT_PREFIX + "structure_support",OBJ_TREND) && ok;
+   ok = DSA_RequireObjectType(DSA_CHART_OBJECT_PREFIX + "structure_resistance",OBJ_TREND) && ok;
+   ok = DSA_RequireObjectType(DSA_CHART_OBJECT_PREFIX + "congestion_box",OBJ_RECTANGLE) && ok;
+   ok = DSA_RequireObjectType(DSA_CHART_OBJECT_PREFIX + "regime_state",OBJ_TREND) && ok;
+   ok = DSA_RequireObjectType(DSA_CHART_OBJECT_PREFIX + "event_marker",OBJ_TREND) && ok;
    if(!ok)
       return false;
 

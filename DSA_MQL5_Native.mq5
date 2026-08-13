@@ -153,6 +153,7 @@ DSALiveState LiveState;
 bool DSA_RetainedOutputAvailable = false;
 bool DSA_CandidateBuildActive = false;
 bool DSA_CandidateRejected = false;
+bool DSA_CandidateReadyToCommit = false;
 string DSA_CandidateInputFingerprint = "";
 string DSA_CandidateHistoryFingerprint = "";
 int DSA_CandidateBuildTotal = 0;
@@ -393,6 +394,7 @@ void DSA_ResetCandidateBuffers()
 void DSA_ClearCandidateBuild()
 {
    DSA_CandidateBuildActive = false;
+   DSA_CandidateReadyToCommit = false;
    DSA_CandidateInputFingerprint = "";
    DSA_CandidateHistoryFingerprint = "";
    DSA_CandidateBuildTotal = 0;
@@ -483,6 +485,7 @@ void DSA_PrepareBackgroundBuild(const int rates_total,const string history_finge
       DSA_ResetBuffers();
 
    DSA_StartProgressiveBuild(RuntimeState,rates_total,InputContract.fingerprint,history_fingerprint);
+   DSA_CandidateReadyToCommit = false;
    if(DSA_CandidateBuildActive)
       DSA_StampCandidateBuild(rates_total);
    else
@@ -776,6 +779,15 @@ void DSA_CommitCandidateBuffers(const int rates_total)
    }
 }
 
+bool DSA_CanCommitCandidateBuffersNow(const int rates_total)
+{
+   if(rates_total <= 4096)
+      return true;
+   if(RuntimeState.runtime_load <= 0.72)
+      return true;
+   return DSA_CandidateReadyToCommit;
+}
+
 void DSA_ProcessHistoricalSlice(const int rates_total,
                                 const datetime &time[],
                                 const double &open[],
@@ -789,7 +801,9 @@ void DSA_ProcessHistoricalSlice(const int rates_total,
       return;
 
    int cursor = RuntimeState.build_cursor;
-   if(cursor < 1 || cursor >= rates_total)
+   if(DSA_CandidateBuildActive && DSA_CandidateReadyToCommit)
+      cursor = 0;
+   else if(cursor < 1 || cursor >= rates_total)
       cursor = rates_total - 1;
 
    const int budget = DSA_WorkBudgetBars(RuntimeState,rates_total);
@@ -813,6 +827,12 @@ void DSA_ProcessHistoricalSlice(const int rates_total,
    {
       if(DSA_CandidateBuildActive)
       {
+         if(!DSA_CanCommitCandidateBuffersNow(rates_total))
+         {
+            DSA_CandidateReadyToCommit = true;
+            return;
+         }
+
          if(!DSA_CandidateBuildMatches(rates_total) ||
             !DSA_FingerprintBufferMatchesCurrent(rates_total,time,open,high,low,close,tick_volume,spread,CandidateCalcBarFingerprint))
          {
@@ -937,6 +957,39 @@ void DSA_ProcessLivePath(const int rates_total,
    const double render_upper = (LiveState.frame.valid ? LiveState.frame.uncertainty_upper : BufferUncertaintyUpper[0]);
    const double render_slope = (LiveState.frame.valid ? LiveState.frame.slope : CalcSlope[0]);
    const double render_score = (LiveState.frame.valid ? LiveState.frame.model_score : CalcModelScore[0]);
+   double render_support = low[0];
+   double render_resistance = high[0];
+   double render_congestion = 0.0;
+   DSA_SampledStructureContext(0,rates_total,high,low,high[0],low[0],
+                               render_support,render_resistance,render_congestion);
+   const int render_regime = (DSA_HasValue(BufferRegimeColor[0]) ? (int)BufferRegimeColor[0] : DSA_REGIME_UNCERTAIN);
+   int render_event_type = DSA_EVENT_NONE;
+   double render_event_strength = 0.0;
+   if(DSA_HasValue(BufferAuxiliaryEvent[0]))
+   {
+      if(render_regime == DSA_REGIME_SHOCK)
+         render_event_type = DSA_EVENT_SHOCK;
+      else if(DSA_HasValue(CalcDrift[0]) && CalcDrift[0] > 0.68)
+         render_event_type = DSA_EVENT_REGIME_CHANGE;
+      else if(render_target > render_resistance - MathMax(render_upper - render_lower,_Point) * 0.05 ||
+              render_target < render_support + MathMax(render_upper - render_lower,_Point) * 0.05)
+         render_event_type = DSA_EVENT_BREAKOUT;
+      else
+         render_event_type = DSA_EVENT_ANOMALY;
+      render_event_strength = DSA_Clamp(MathMax(MathAbs(CalcDrift[0]),MathAbs(render_target - render_forecast) /
+                                                MathMax(render_upper - render_lower,_Point)),
+                                        0.0,1.0);
+   }
+   else if(DSA_HasValue(BufferHistoricalUp[0]))
+   {
+      render_event_type = DSA_EVENT_UP_PRESSURE;
+      render_event_strength = 0.65;
+   }
+   else if(DSA_HasValue(BufferHistoricalDown[0]))
+   {
+      render_event_type = DSA_EVENT_DOWN_PRESSURE;
+      render_event_strength = 0.65;
+   }
 
    DSA_RenderForecastObjects(InputContract,
                               time[0],
@@ -948,7 +1001,13 @@ void DSA_ProcessLivePath(const int rates_total,
                               MathMax(render_upper - render_forecast,_Point),
                               MathMax(CalcHorizonGrowth[0],1.0),
                               render_score,
-                              RuntimeState.runtime_load);
+                              RuntimeState.runtime_load,
+                              render_support,
+                              render_resistance,
+                              render_congestion,
+                              render_regime,
+                              render_event_type,
+                              render_event_strength);
 }
 
 int OnInit()

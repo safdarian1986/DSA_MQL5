@@ -3,6 +3,19 @@
 
 #include "..\\Features\\FeatureEngine.mqh"
 
+struct DSAExpertEvidence
+{
+   double oos_error;
+   double stability;
+   double maturity;
+   double coverage;
+   double shock_resistance;
+   double latency_score;
+   double score;
+   double weight;
+   bool approved;
+};
+
 struct DSAModelSnapshot
 {
    double naive;
@@ -12,8 +25,17 @@ struct DSAModelSnapshot
    double holt_forecast;
    double kalman_level;
    double kalman_slope;
+   double kalman_trend_strength;
+   double kalman_innovation;
+   double kalman_residual;
+   double kalman_state_uncertainty;
    double kalman_forecast;
    double ridge_forecast;
+   int ridge_adaptive_lag;
+   double ridge_feature_weight;
+   double ridge_time_weight;
+   double ridge_horizon_weight;
+   double ridge_adaptive_score;
    double sequence_forecast;
    double sequence_confidence;
    double sequence_maturity;
@@ -29,6 +51,16 @@ struct DSAModelSnapshot
    double volatility_stress;
    int regime;
    bool safe_mode;
+   double expert_weight_naive;
+   double expert_weight_holt;
+   double expert_weight_kalman;
+   double expert_weight_ridge;
+   double expert_weight_sequence;
+   DSAExpertEvidence naive_evidence;
+   DSAExpertEvidence holt_evidence;
+   DSAExpertEvidence kalman_evidence;
+   DSAExpertEvidence ridge_evidence;
+   DSAExpertEvidence sequence_evidence;
 };
 
 double DSA_SequenceScaleReturn(const int index,
@@ -153,6 +185,66 @@ double DSA_SequenceExpertForecast(const int index,
    return DSA_Clamp(feature.target + blended_delta,feature.target - guard,feature.target + guard);
 }
 
+void DSA_ResetExpertEvidence(DSAExpertEvidence &evidence)
+{
+   evidence.oos_error = 0.0;
+   evidence.stability = 0.0;
+   evidence.maturity = 0.0;
+   evidence.coverage = 0.0;
+   evidence.shock_resistance = 0.0;
+   evidence.latency_score = 0.0;
+   evidence.score = 0.0;
+   evidence.weight = 0.0;
+   evidence.approved = false;
+}
+
+void DSA_BuildExpertEvidence(const double forecast,
+                             DSAFeatureSnapshot &feature,
+                             const double interval_radius,
+                             const double runtime_load,
+                             const double maturity_hint,
+                             const double latency_cost,
+                             const bool advanced_expert,
+                             DSAExpertEvidence &evidence)
+{
+   evidence.oos_error = MathAbs(feature.target - forecast);
+   const double radius = MathMax(interval_radius,MathMax(feature.volatility,_Point));
+   evidence.stability = DSA_Clamp(1.0 - evidence.oos_error / MathMax(radius * 2.5,_Point),0.0,1.0);
+   evidence.maturity = DSA_Clamp(maturity_hint,0.0,1.0);
+   evidence.coverage = (evidence.oos_error <= radius ? 1.0 : DSA_Clamp(radius / MathMax(evidence.oos_error,_Point),0.0,1.0));
+   evidence.shock_resistance = DSA_Clamp(1.0 -
+                                         0.45 * feature.volume_shock -
+                                         0.35 * DSA_Clamp(feature.vol_of_vol / 2.0,0.0,1.0) -
+                                         0.20 * DSA_Clamp(MathAbs(feature.robust_z) / 5.0,0.0,1.0),
+                                         0.0,1.0);
+   evidence.latency_score = DSA_Clamp(1.0 - latency_cost * DSA_Clamp(runtime_load,0.0,1.5) / 1.5,0.0,1.0);
+   evidence.score = DSA_Clamp(0.28 * evidence.stability +
+                              0.20 * evidence.maturity +
+                              0.18 * evidence.coverage +
+                              0.16 * evidence.shock_resistance +
+                              0.12 * evidence.latency_score +
+                              0.06 * feature.feature_reliability,
+                              0.0,1.0);
+   evidence.approved = (!advanced_expert ||
+                        (evidence.maturity >= 0.25 &&
+                         evidence.coverage >= 0.20 &&
+                         evidence.stability >= 0.18 &&
+                         evidence.shock_resistance >= 0.18 &&
+                         evidence.latency_score >= 0.20 &&
+                         evidence.score >= 0.30));
+}
+
+double DSA_EvidenceAdjustedWeight(const double prior,
+                                  DSAExpertEvidence &evidence,
+                                  const double unapproved_limit)
+{
+   double weight = MathMax(prior,0.0) * DSA_Clamp(0.20 + evidence.score,0.0,1.20);
+   if(!evidence.approved)
+      weight = MathMin(weight,MathMax(unapproved_limit,0.0));
+   evidence.weight = weight;
+   return weight;
+}
+
 int DSA_ClassifyRegime(DSAFeatureSnapshot &feature,const double disagreement,const double drift_score)
 {
    if(feature.quality_score < 45.0 ||
@@ -245,8 +337,33 @@ double DSA_RidgeForecast(const int index,
                          const double &low[],
                          const double &close[],
                          const double &target_buffer[],
-                         const double ridge_lambda_scale)
+                         const double ridge_lambda_scale,
+                         int &adaptive_lag,
+                         double &feature_weight,
+                         double &time_weight,
+                         double &horizon_weight,
+                         double &adaptive_score)
 {
+   adaptive_lag = MathMax(2,MathMin(feature.adaptive_lag,8));
+   feature_weight = DSA_Clamp(0.55 * feature.feature_reliability +
+                              0.25 * feature.range_efficiency +
+                              0.20 * MathAbs(feature.causal_correlation),
+                              0.0,1.0);
+   time_weight = DSA_Clamp(0.65 + 0.35 * DSA_Clamp(feature.quality_score / 100.0,0.0,1.0) -
+                           0.20 * DSA_Clamp(feature.vol_of_vol / 2.0,0.0,1.0),
+                           0.20,1.0);
+   horizon_weight = DSA_Clamp(1.0 -
+                              0.25 * DSA_Clamp(feature.vol_of_vol / 2.0,0.0,1.0) -
+                              0.20 * feature.volume_shock +
+                              0.15 * feature.cycle_stability,
+                              0.30,1.0);
+   adaptive_score = DSA_Clamp(0.30 * feature_weight +
+                              0.25 * time_weight +
+                              0.20 * horizon_weight +
+                              0.15 * feature.cycle_stability +
+                              0.10 * feature.persistence,
+                              0.0,1.0);
+
    if(index + 3 >= rates_total)
       return feature.target + feature.slope;
 
@@ -298,8 +415,12 @@ double DSA_RidgeForecast(const int index,
       x[4] = y1 - y4 + 0.25 * origin_channel_signal;
 
       const double age = (double)(origin - index);
-      const double adaptive_decay = 0.002 + 0.012 * (1.0 - DSA_Clamp(feature.quality_score / 100.0,0.0,1.0));
-      const double weight = MathExp(-adaptive_decay * age);
+      const double adaptive_decay = 0.002 + 0.012 * (1.0 - time_weight);
+      const double feature_fit = DSA_Clamp(0.55 * feature_weight +
+                                           0.25 * feature.cycle_stability +
+                                           0.20 * DSA_Clamp(1.0 - MathAbs(feature.robust_z) / 6.0,0.0,1.0),
+                                           0.05,1.0);
+      const double weight = MathExp(-adaptive_decay * age) * feature_fit;
       const double y = target_buffer[outcome];
 
       for(int r = 0; r < 5; ++r)
@@ -326,13 +447,17 @@ double DSA_RidgeForecast(const int index,
    const double p2 = (DSA_HasValue(target_buffer[index + 2]) ? target_buffer[index + 2] : p1);
    const double p3 = (DSA_HasValue(target_buffer[index + 3]) ? target_buffer[index + 3] : p2);
    const double p4 = (index + 4 < rates_total && DSA_HasValue(target_buffer[index + 4]) ? target_buffer[index + 4] : p3);
+   const int lag_index = MathMin(index + adaptive_lag,rates_total - 1);
+   const double p_adaptive = (DSA_HasValue(target_buffer[lag_index]) ? target_buffer[lag_index] : p3);
    double x_now[5];
    x_now[0] = 1.0;
    x_now[1] = feature.target;
    x_now[2] = p1;
    x_now[3] = p2;
    const double current_channel_signal = (feature.multi_channel ? feature.selected_direction : 0.0);
-   x_now[4] = feature.target - p3 + 0.25 * (p1 - p4) + 0.25 * current_channel_signal;
+   x_now[4] = feature_weight * (feature.target - p_adaptive) +
+              horizon_weight * 0.25 * (p1 - p4) +
+              0.25 * current_channel_signal;
 
    double forecast = 0.0;
    for(int i = 0; i < 5; ++i)
@@ -533,11 +658,34 @@ void DSA_ComputeModels(const int index,
    model.kalman_level = kalman_prediction + kalman_gain * innovation;
    model.kalman_slope = previous_slope + kalman_gain * 0.35 * innovation;
    model.kalman_forecast = model.kalman_level + model.kalman_slope;
+   model.kalman_innovation = innovation;
+   model.kalman_residual = feature.target - model.kalman_level;
+   model.kalman_state_uncertainty = MathMax(feature.volatility,
+                                            MathAbs(model.kalman_residual) +
+                                            (1.0 - kalman_gain) * MathMax(feature.mad_volatility,_Point));
+   model.kalman_trend_strength = DSA_Clamp(MathAbs(model.kalman_slope) /
+                                           MathMax(model.kalman_state_uncertainty,_Point),
+                                           0.0,3.0) / 3.0;
 
    if(fast_path && index + 1 < rates_total && DSA_HasValue(ridge_state_buffer[index + 1]))
+   {
       model.ridge_forecast = ridge_state_buffer[index + 1];
+      model.ridge_adaptive_lag = MathMax(2,MathMin(feature.adaptive_lag,8));
+      model.ridge_feature_weight = feature.feature_reliability;
+      model.ridge_time_weight = DSA_Clamp(feature.quality_score / 100.0,0.20,1.0);
+      model.ridge_horizon_weight = DSA_Clamp(1.0 - 0.25 * feature.vol_of_vol,0.30,1.0);
+      model.ridge_adaptive_score = DSA_Clamp(0.45 * model.ridge_feature_weight +
+                                             0.30 * model.ridge_time_weight +
+                                             0.25 * model.ridge_horizon_weight,
+                                             0.0,1.0);
+   }
    else
-      model.ridge_forecast = DSA_RidgeForecast(index,rates_total,feature,contract,open,high,low,close,target_buffer,ridge_lambda_scale);
+      model.ridge_forecast = DSA_RidgeForecast(index,rates_total,feature,contract,open,high,low,close,target_buffer,ridge_lambda_scale,
+                                               model.ridge_adaptive_lag,
+                                               model.ridge_feature_weight,
+                                               model.ridge_time_weight,
+                                               model.ridge_horizon_weight,
+                                               model.ridge_adaptive_score);
 
    const bool sequence_mode = (contract.model_mode == DSA_MODEL_DEEP_LEARNING ||
                                contract.model_mode == DSA_MODEL_HYBRID);
@@ -707,7 +855,52 @@ void DSA_ComputeModels(const int index,
       model.interval_radius *= 1.35;
    }
 
+   const double naive_maturity = DSA_Clamp((double)feature.maturity / 12.0,0.0,1.0);
+   const double linear_maturity = DSA_Clamp((double)feature.maturity / 40.0,0.0,1.0);
+   const double ridge_maturity = DSA_Clamp((double)(feature.maturity - 24) / 160.0,0.0,1.0) * model.ridge_adaptive_score;
+   const double sequence_maturity = model.sequence_maturity * model.sequence_confidence;
+   DSA_BuildExpertEvidence(model.naive,feature,model.interval_radius,runtime_load,naive_maturity,0.05,false,model.naive_evidence);
+   DSA_BuildExpertEvidence(model.holt_forecast,feature,model.interval_radius,runtime_load,linear_maturity,0.10,false,model.holt_evidence);
+   DSA_BuildExpertEvidence(model.kalman_forecast,feature,model.interval_radius,runtime_load,linear_maturity,0.12,false,model.kalman_evidence);
+   DSA_BuildExpertEvidence(model.ridge_forecast,feature,model.interval_radius,runtime_load,ridge_maturity,0.30,true,model.ridge_evidence);
+   DSA_BuildExpertEvidence(model.sequence_forecast,feature,model.interval_radius,runtime_load,sequence_maturity,0.40,true,model.sequence_evidence);
+
+   if(model.safe_mode)
+   {
+      model.ridge_evidence.approved = false;
+      model.sequence_evidence.approved = false;
+   }
+   if(contract.model_mode == DSA_MODEL_STATISTICAL || contract.model_mode == DSA_MODEL_SAFE_MODE)
+   {
+      model.ridge_evidence.approved = false;
+      model.sequence_evidence.approved = false;
+   }
+   if(contract.model_mode == DSA_MODEL_MACHINE_LEARNING)
+      model.sequence_evidence.approved = false;
+   if(!sequence_mode)
+      model.sequence_evidence.approved = false;
+
+   w_naive = DSA_EvidenceAdjustedWeight(w_naive,model.naive_evidence,0.05);
+   w_holt = DSA_EvidenceAdjustedWeight(w_holt,model.holt_evidence,0.04);
+   w_kalman = DSA_EvidenceAdjustedWeight(w_kalman,model.kalman_evidence,0.05);
+   w_ridge = DSA_EvidenceAdjustedWeight(w_ridge,model.ridge_evidence,0.02);
+   w_sequence = DSA_EvidenceAdjustedWeight(w_sequence,model.sequence_evidence,0.02);
+   if(!model.ridge_evidence.approved && contract.model_mode != DSA_MODEL_MACHINE_LEARNING && contract.model_mode != DSA_MODEL_HYBRID)
+      w_ridge = 0.0;
+   if(!model.sequence_evidence.approved)
+      w_sequence = 0.0;
+
    const double weight_sum = MathMax(w_naive + w_holt + w_kalman + w_ridge + w_sequence,DBL_EPSILON);
+   model.expert_weight_naive = w_naive / weight_sum;
+   model.expert_weight_holt = w_holt / weight_sum;
+   model.expert_weight_kalman = w_kalman / weight_sum;
+   model.expert_weight_ridge = w_ridge / weight_sum;
+   model.expert_weight_sequence = w_sequence / weight_sum;
+   model.naive_evidence.weight = model.expert_weight_naive;
+   model.holt_evidence.weight = model.expert_weight_holt;
+   model.kalman_evidence.weight = model.expert_weight_kalman;
+   model.ridge_evidence.weight = model.expert_weight_ridge;
+   model.sequence_evidence.weight = model.expert_weight_sequence;
    model.central_forecast = (w_naive * model.naive +
                              w_holt * model.holt_forecast +
                              w_kalman * model.kalman_forecast +
