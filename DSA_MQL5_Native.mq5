@@ -249,7 +249,8 @@ void DSA_ProcessBar(const int index,
    DSA_BuildFeatureSnapshot(index,rates_total,InputContract,time,open,high,low,close,tick_volume,spread,
                             CalcTarget,BufferAdaptiveTrend,CalcSlope,CalcVolatility,CalcQuality,feature);
 
-   DSA_ComputeModels(index,rates_total,InputContract,feature,CalcTarget,BufferAdaptiveTrend,BufferSignal,
+   DSA_ComputeModels(index,rates_total,InputContract,feature,open,high,low,close,
+                      CalcTarget,BufferAdaptiveTrend,BufferSignal,
                       CalcForecast,CalcForecastH2,CalcForecastH4,CalcForecastH8,
                       CalcVolatility,BufferUncertaintyUpper,BufferUncertaintyLower,
                       CalcAbsoluteError,BufferRegimeColor,CalcRidgeState,

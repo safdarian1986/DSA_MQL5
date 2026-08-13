@@ -30,6 +30,10 @@ int DSA_ClassifyRegime(DSAFeatureSnapshot &feature,const double disagreement,con
 {
    if(feature.quality_score < 45.0 || MathAbs(feature.robust_z) > 4.0 || drift_score > 0.85)
       return DSA_REGIME_SHOCK;
+   if(feature.multi_channel &&
+      feature.selected_spread > MathMax(feature.volatility * 2.5,feature.candle_range * 0.75) &&
+      disagreement > 0.55)
+      return DSA_REGIME_VOLATILE;
    if(feature.volatility > MathMax(MathAbs(feature.target) * 0.015,10.0 * _Point) && MathAbs(feature.robust_z) > 2.0)
       return DSA_REGIME_VOLATILE;
    if(feature.slope > feature.volatility * 0.12 && feature.persistence > 0.20)
@@ -97,6 +101,11 @@ bool DSA_SolveLinearSystem5(double &ridge_work[],double &solution[])
 double DSA_RidgeForecast(const int index,
                          const int rates_total,
                          DSAFeatureSnapshot &feature,
+                         DSAInputContract &contract,
+                         const double &open[],
+                         const double &high[],
+                         const double &low[],
+                         const double &close[],
                          const double &target_buffer[],
                          const double ridge_lambda_scale)
 {
@@ -137,11 +146,14 @@ double DSA_RidgeForecast(const int index,
       const double y3 = target_buffer[origin + 2];
       const double y4 = target_buffer[origin + 3];
       double x[5];
+      DSASelectionChannels origin_channels;
+      DSA_BuildSelectionChannels(origin,contract.selection_data,open,high,low,close,origin_channels);
+      const double origin_channel_signal = (origin_channels.channel_count > 1 ? origin_channels.direction : 0.0);
       x[0] = 1.0;
       x[1] = y1;
       x[2] = y2;
       x[3] = y3;
-      x[4] = y1 - y4;
+      x[4] = y1 - y4 + 0.25 * origin_channel_signal;
 
       const double age = (double)(origin - index);
       const double adaptive_decay = 0.002 + 0.012 * (1.0 - DSA_Clamp(feature.quality_score / 100.0,0.0,1.0));
@@ -177,7 +189,8 @@ double DSA_RidgeForecast(const int index,
    x_now[1] = feature.target;
    x_now[2] = p1;
    x_now[3] = p2;
-   x_now[4] = feature.target - p3 + 0.25 * (p1 - p4);
+   const double current_channel_signal = (feature.multi_channel ? feature.selected_direction : 0.0);
+   x_now[4] = feature.target - p3 + 0.25 * (p1 - p4) + 0.25 * current_channel_signal;
 
    double forecast = 0.0;
    for(int i = 0; i < 5; ++i)
@@ -326,6 +339,10 @@ void DSA_ComputeModels(const int index,
                        const int rates_total,
                        DSAInputContract &contract,
                        DSAFeatureSnapshot &feature,
+                       const double &open[],
+                       const double &high[],
+                       const double &low[],
+                       const double &close[],
                        const double &target_buffer[],
                        const double &trend_buffer[],
                        const double &signal_buffer[],
@@ -376,7 +393,7 @@ void DSA_ComputeModels(const int index,
    if(fast_path && index + 1 < rates_total && DSA_HasValue(ridge_state_buffer[index + 1]))
       model.ridge_forecast = ridge_state_buffer[index + 1];
    else
-      model.ridge_forecast = DSA_RidgeForecast(index,rates_total,feature,target_buffer,ridge_lambda_scale);
+      model.ridge_forecast = DSA_RidgeForecast(index,rates_total,feature,contract,open,high,low,close,target_buffer,ridge_lambda_scale);
 
    double w_naive = 0.15;
    double w_holt = 0.25;

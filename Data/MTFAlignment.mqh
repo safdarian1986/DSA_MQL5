@@ -63,24 +63,14 @@ double DSA_MtfTarget(DSAMtfSnapshot &snapshot,const ENUM_DSA_SELECTION_DATA sele
    if(!snapshot.available)
       return 0.0;
 
-   switch(selection_data)
-   {
-      case DSA_DATA_OPEN:
-         return snapshot.open;
-      case DSA_DATA_HIGH:
-         return snapshot.high;
-      case DSA_DATA_LOW:
-         return snapshot.low;
-      case DSA_DATA_HL:
-         return 0.5 * (snapshot.high + snapshot.low);
-      case DSA_DATA_OC:
-         return 0.5 * (snapshot.open + snapshot.close);
-      case DSA_DATA_OHLC:
-         return 0.25 * (snapshot.open + snapshot.high + snapshot.low + snapshot.close);
-      case DSA_DATA_CLOSE:
-      default:
-         return snapshot.close;
-   }
+   DSASelectionChannels channels;
+   DSA_BuildSelectionChannelsFromValues(selection_data,
+                                        snapshot.open,
+                                        snapshot.high,
+                                        snapshot.low,
+                                        snapshot.close,
+                                        channels);
+   return channels.central;
 }
 
 #endif

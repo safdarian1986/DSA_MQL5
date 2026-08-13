@@ -6,6 +6,14 @@
 struct DSAFeatureSnapshot
 {
    double target;
+   double source_open;
+   double source_high;
+   double source_low;
+   double source_close;
+   double selected_upper;
+   double selected_lower;
+   double selected_spread;
+   double selected_direction;
    double ohlc_average;
    double median_price;
    double oc_midpoint;
@@ -29,6 +37,8 @@ struct DSAFeatureSnapshot
    double mtf_target;
    double mtf_deviation;
    bool mtf_available;
+   bool multi_channel;
+   int selected_channel_count;
    int maturity;
 };
 
@@ -136,7 +146,20 @@ void DSA_BuildFeatureSnapshot(const int index,
                               const double &quality_buffer[],
                               DSAFeatureSnapshot &feature)
 {
-   feature.target = DSA_SourceTarget(index,contract.selection_data,open,high,low,close);
+   DSASelectionChannels channels;
+   DSA_BuildSelectionChannels(index,contract.selection_data,open,high,low,close,channels);
+
+   feature.target = channels.central;
+   feature.source_open = channels.open_value;
+   feature.source_high = channels.high_value;
+   feature.source_low = channels.low_value;
+   feature.source_close = channels.close_value;
+   feature.selected_upper = channels.upper;
+   feature.selected_lower = channels.lower;
+   feature.selected_spread = channels.spread;
+   feature.selected_direction = channels.direction;
+   feature.selected_channel_count = channels.channel_count;
+   feature.multi_channel = (channels.channel_count > 1);
    feature.ohlc_average = DSA_OHLCAverage(index,open,high,low,close);
    feature.median_price = DSA_MedianPrice(index,high,low);
    feature.oc_midpoint = DSA_OpenCloseMidpoint(index,open,close);
@@ -158,7 +181,11 @@ void DSA_BuildFeatureSnapshot(const int index,
    double previous_volatility = feature.candle_range;
    if(index + 1 < rates_total && DSA_HasValue(volatility_buffer[index + 1]))
       previous_volatility = volatility_buffer[index + 1];
-   feature.volatility = DSA_Ewma(previous_volatility,MathMax(feature.absolute_return,feature.candle_range * 0.35),0.08);
+   const double channel_volatility = MathMax(feature.selected_spread * 0.50,MathAbs(feature.selected_direction));
+   feature.volatility = DSA_Ewma(previous_volatility,
+                                 MathMax(MathMax(feature.absolute_return,feature.candle_range * 0.35),
+                                         channel_volatility * 0.35),
+                                 0.08);
    feature.volatility = MathMax(feature.volatility,_Point);
 
    double previous_slope = 0.0;
@@ -170,6 +197,13 @@ void DSA_BuildFeatureSnapshot(const int index,
    feature.robust_z = DSA_SafeDiv(feature.target - previous_trend,MathMax(feature.volatility,_Point),0.0);
    feature.persistence = (feature.slope == 0.0 ? 0.0 : DSA_Clamp(MathAbs(feature.slope) / MathMax(feature.volatility,_Point),0.0,3.0) / 3.0);
    feature.range_efficiency = DSA_Clamp(DSA_SafeDiv(MathAbs(close[index] - open[index]),feature.candle_range,0.0),0.0,1.0);
+   if(feature.multi_channel && feature.selected_spread > _Point)
+   {
+      const double channel_efficiency = DSA_Clamp(DSA_SafeDiv(MathAbs(feature.selected_direction),
+                                                              MathMax(feature.selected_spread,_Point),
+                                                              feature.range_efficiency),0.0,1.0);
+      feature.range_efficiency = 0.50 * feature.range_efficiency + 0.50 * channel_efficiency;
+   }
    feature.acf1 = DSA_SampledAcf(index,rates_total,target_buffer,1);
    feature.acf2 = DSA_SampledAcf(index,rates_total,target_buffer,2);
    feature.pacf2 = DSA_SafeDiv(feature.acf2 - feature.acf1 * feature.acf1,
@@ -177,7 +211,9 @@ void DSA_BuildFeatureSnapshot(const int index,
                                0.0);
    feature.pacf2 = DSA_Clamp(feature.pacf2,-1.0,1.0);
    feature.cycle_score = DSA_SampledCycleScore(index,rates_total,target_buffer);
-   feature.structure_position = DSA_Clamp(DSA_SafeDiv(feature.target - low[index],feature.candle_range,0.5),0.0,1.0);
+   const double structure_range = (feature.multi_channel ? MathMax(feature.selected_spread,_Point) : feature.candle_range);
+   const double structure_low = (feature.multi_channel ? feature.selected_lower : low[index]);
+   feature.structure_position = DSA_Clamp(DSA_SafeDiv(feature.target - structure_low,structure_range,0.5),0.0,1.0);
    feature.mtf_available = false;
    feature.mtf_target = feature.target;
    feature.mtf_deviation = 0.0;

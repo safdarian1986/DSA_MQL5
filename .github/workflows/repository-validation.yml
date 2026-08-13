@@ -42,16 +42,19 @@ jobs:
             'Validation/IMPLEMENTATION_REPORT.md',
             'Validation/CATALOG_SPECIFICATION_AUDIT.md',
             'Validation/COMPLETION_AUDIT.md',
+            'Validation/CATALOG_CLAUSE_MATRIX.md',
             'Validation/DSA_AdversarialHarness.mq5',
             'Validation/DSA_MtfCausalityHarness.mq5',
             'Validation/DSA_ChartObjectHarness.mq5',
             'Validation/DSA_ModelModeHarness.mq5',
+            'Validation/DSA_SelectionDataHarness.mq5',
             'Validation/DSA_RuntimeHarness.mq5',
             'Validation/DSA_DeepLearningHarness.mq5',
             'Validation/RuntimeTesterAdversarial.ini',
             'Validation/RuntimeTesterMtf.ini',
             'Validation/RuntimeTesterChart.ini',
             'Validation/RuntimeTesterModes.ini',
+            'Validation/RuntimeTesterSelection.ini',
             'Validation/RuntimeTester.ini',
             'Validation/RuntimeTesterDeep.ini'
           )
@@ -100,6 +103,11 @@ jobs:
             throw 'Expected per-bar history revision audit support in the indicator source.'
           }
 
+          $dataContract = Get-Content -LiteralPath 'Data/DataContract.mqh' -Raw
+          if ($dataContract -notmatch 'DSASelectionChannels' -or $dataContract -notmatch 'DSA_BuildSelectionChannels') {
+            throw 'Expected independent selection-channel contract support.'
+          }
+
           $mqlFiles = Get-ChildItem -Recurse -Force -File -Include '*.mq5','*.mqh' |
             Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' }
 
@@ -131,8 +139,8 @@ jobs:
           }
 
           $compileLogs = Get-ChildItem -File -Filter 'compile-evidence-*.log'
-          if ($compileLogs.Count -lt 7) {
-            throw "Expected at least 7 retained compile evidence logs, found $($compileLogs.Count)"
+          if ($compileLogs.Count -lt 8) {
+            throw "Expected at least 8 retained compile evidence logs, found $($compileLogs.Count)"
           }
 
           foreach ($log in $compileLogs) {
@@ -143,10 +151,10 @@ jobs:
           }
 
           $audit = Get-Content -LiteralPath 'Validation/COMPLETION_AUDIT.md' -Raw
-          if ($audit -notmatch 'BLOCKED BY SPECIFICATION GAP') {
-            throw 'Completion audit must preserve the current specification-gap readiness status.'
+          if ($audit -notmatch 'IN PROGRESS') {
+            throw 'Completion audit must preserve the current in-progress readiness status.'
           }
 
-          if ($audit -notmatch 'Deep Learning / Multi-Scale Sequence Expert') {
-            throw 'Completion audit must preserve the Deep Learning specification gap.'
+          if ($audit -notmatch 'lightweight native sequence expert' -or $audit -notmatch 'Independent Selection Data channels') {
+            throw 'Completion audit must preserve the owner-resolved Deep/Hybrid roadmap and Selection Data status.'
           }

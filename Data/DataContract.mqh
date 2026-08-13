@@ -3,6 +3,142 @@
 
 #include "..\\Core\\InputContract.mqh"
 
+struct DSASelectionChannels
+{
+   double open_value;
+   double high_value;
+   double low_value;
+   double close_value;
+   double central;
+   double upper;
+   double lower;
+   double spread;
+   double direction;
+   int channel_count;
+   bool uses_open;
+   bool uses_high;
+   bool uses_low;
+   bool uses_close;
+};
+
+void DSA_ResetSelectionChannels(DSASelectionChannels &channels)
+{
+   channels.open_value = EMPTY_VALUE;
+   channels.high_value = EMPTY_VALUE;
+   channels.low_value = EMPTY_VALUE;
+   channels.close_value = EMPTY_VALUE;
+   channels.central = EMPTY_VALUE;
+   channels.upper = EMPTY_VALUE;
+   channels.lower = EMPTY_VALUE;
+   channels.spread = 0.0;
+   channels.direction = 0.0;
+   channels.channel_count = 0;
+   channels.uses_open = false;
+   channels.uses_high = false;
+   channels.uses_low = false;
+   channels.uses_close = false;
+}
+
+void DSA_RegisterSelectionValue(DSASelectionChannels &channels,
+                                const bool active,
+                                const double value,
+                                double &slot,
+                                bool &flag,
+                                double &upper,
+                                double &lower)
+{
+   if(!active)
+      return;
+
+   slot = value;
+   flag = true;
+   ++channels.channel_count;
+   if(channels.channel_count == 1)
+   {
+      upper = value;
+      lower = value;
+   }
+   else
+   {
+      upper = MathMax(upper,value);
+      lower = MathMin(lower,value);
+   }
+}
+
+void DSA_BuildSelectionChannelsFromValues(const ENUM_DSA_SELECTION_DATA selection_data,
+                                          const double open_value,
+                                          const double high_value,
+                                          const double low_value,
+                                          const double close_value,
+                                          DSASelectionChannels &channels)
+{
+   DSA_ResetSelectionChannels(channels);
+
+   double upper = 0.0;
+   double lower = 0.0;
+   const bool use_open = (selection_data == DSA_DATA_OPEN || selection_data == DSA_DATA_OHLC || selection_data == DSA_DATA_OC);
+   const bool use_high = (selection_data == DSA_DATA_HIGH || selection_data == DSA_DATA_OHLC || selection_data == DSA_DATA_HL);
+   const bool use_low = (selection_data == DSA_DATA_LOW || selection_data == DSA_DATA_OHLC || selection_data == DSA_DATA_HL);
+   const bool use_close = (selection_data == DSA_DATA_CLOSE || selection_data == DSA_DATA_OHLC || selection_data == DSA_DATA_OC);
+
+   DSA_RegisterSelectionValue(channels,use_open,open_value,channels.open_value,channels.uses_open,upper,lower);
+   DSA_RegisterSelectionValue(channels,use_high,high_value,channels.high_value,channels.uses_high,upper,lower);
+   DSA_RegisterSelectionValue(channels,use_low,low_value,channels.low_value,channels.uses_low,upper,lower);
+   DSA_RegisterSelectionValue(channels,use_close,close_value,channels.close_value,channels.uses_close,upper,lower);
+
+   if(channels.channel_count <= 0)
+   {
+      DSA_RegisterSelectionValue(channels,true,close_value,channels.close_value,channels.uses_close,upper,lower);
+   }
+
+   switch(selection_data)
+   {
+      case DSA_DATA_OPEN:
+         channels.central = open_value;
+         break;
+      case DSA_DATA_HIGH:
+         channels.central = high_value;
+         break;
+      case DSA_DATA_LOW:
+         channels.central = low_value;
+         break;
+      case DSA_DATA_HL:
+         channels.central = 0.5 * (high_value + low_value);
+         break;
+      case DSA_DATA_OC:
+         channels.central = 0.5 * (open_value + close_value);
+         break;
+      case DSA_DATA_OHLC:
+         channels.central = 0.25 * (open_value + high_value + low_value + close_value);
+         break;
+      case DSA_DATA_CLOSE:
+      default:
+         channels.central = close_value;
+         break;
+   }
+
+   channels.upper = upper;
+   channels.lower = lower;
+   channels.spread = MathMax(upper - lower,0.0);
+   if(channels.uses_open && channels.uses_close)
+      channels.direction = close_value - open_value;
+   else if(channels.uses_high && channels.uses_low)
+      channels.direction = high_value - low_value;
+   else
+      channels.direction = 0.0;
+}
+
+void DSA_BuildSelectionChannels(const int index,
+                                const ENUM_DSA_SELECTION_DATA selection_data,
+                                const double &open[],
+                                const double &high[],
+                                const double &low[],
+                                const double &close[],
+                                DSASelectionChannels &channels)
+{
+   DSA_BuildSelectionChannelsFromValues(selection_data,open[index],high[index],low[index],close[index],channels);
+}
+
 double DSA_SourceTarget(const int index,
                         const ENUM_DSA_SELECTION_DATA selection_data,
                         const double &open[],
@@ -10,24 +146,9 @@ double DSA_SourceTarget(const int index,
                         const double &low[],
                         const double &close[])
 {
-   switch(selection_data)
-   {
-      case DSA_DATA_OPEN:
-         return open[index];
-      case DSA_DATA_HIGH:
-         return high[index];
-      case DSA_DATA_LOW:
-         return low[index];
-      case DSA_DATA_HL:
-         return 0.5 * (high[index] + low[index]);
-      case DSA_DATA_OC:
-         return 0.5 * (open[index] + close[index]);
-      case DSA_DATA_OHLC:
-         return 0.25 * (open[index] + high[index] + low[index] + close[index]);
-      case DSA_DATA_CLOSE:
-      default:
-         return close[index];
-   }
+   DSASelectionChannels channels;
+   DSA_BuildSelectionChannels(index,selection_data,open,high,low,close,channels);
+   return channels.central;
 }
 
 double DSA_OHLCAverage(const int index,const double &open[],const double &high[],const double &low[],const double &close[])

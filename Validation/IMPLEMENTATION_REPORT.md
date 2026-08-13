@@ -2,23 +2,24 @@
 
 ## Status
 
-This workspace contains a pure MQL5, non-trading MetaTrader 5 custom indicator implementation plus fresh adversarial Strategy Tester harnesses. The current implementation is compiled and runtime-tested, but it is not declared production-ready because the Catalog names `Deep Learning` / `Multi-Scale Sequence Expert` without enough implementation detail to define a unique neural or sequence architecture.
+This workspace contains a pure MQL5, non-trading MetaTrader 5 custom indicator implementation plus fresh adversarial Strategy Tester harnesses. The current implementation is compiled and runtime-tested, but it is not declared production-ready because the owner-resolved lightweight Multi-Scale Sequence Expert and true Hybrid ensemble are still being implemented.
 
 ## Catalog Evidence
 
 - `Catalog/DSA_MQL5_EN.docx` was freshly extracted from OOXML text and tables.
 - `Catalog/DataSience-en.docx` was freshly extracted from OOXML text and tables.
 - The MQL5 Catalog defines the final locked architecture around Naive/Drift, Adaptive Holt, Kalman, Adaptive AR-Ridge, Adaptive Ensemble, Conformal uncertainty, Walk-Forward validation, Drift, Safe Mode, graphical rendering, and a tick-safe scheduler.
-- The MQL5 Catalog lists `Deep Learning = Multi-Scale Sequence Expert` and `Hybrid = Statistical + Ridge + Multi-Scale Ensemble`, but does not define MQL5-specific neural topology, training loop, station state, loss, inference contract, or acceptance criteria.
-- The general DataScience document names MLP/RNN/LSTM/GRU/TCN/Transformer/TFT concepts, but remains a roadmap rather than an implementable DSA-MQL5 neural specification.
+- The MQL5 Catalog lists `Deep Learning = Multi-Scale Sequence Expert` and `Hybrid = Statistical + Ridge + Multi-Scale Ensemble`.
+- The owner has clarified that this project must implement the useful multi-scale sequence-modeling objective as a lightweight, causal, MQL5-native expert without online LSTM/GRU/Transformer/TCN/MLP training.
+- The general DataScience document names MLP/RNN/LSTM/GRU/TCN/Transformer/TFT concepts as a broad roadmap; DSA-MQL5 must use practical native substitutes where the final MQL5 Catalog replaces heavyweight systems.
 
 ## Implemented Source Structure
 
 - `DSA_MQL5_Native.mq5`: main custom indicator entrypoint.
 - `Core/`: common helpers and the 10-input contract.
 - `Runtime/`: runtime load, coalesced triggers, single-flight flags, stale-state guard, progressive build cursor, and rotating history-audit cursor.
-- `Data/`: target selection, auxiliary central series, data quality, per-bar revision fingerprinting, stable history checkpoints, and causal MTF alignment.
-- `Features/`: causal candle, return, volatility, slope, quality, ACF/PACF, cycle, structure, and MTF feature snapshots.
+- `Data/`: independent Selection Data channel contract, auxiliary central series, data quality, per-bar revision fingerprinting, stable history checkpoints, and causal MTF alignment.
+- `Features/`: causal independent price channels, candle, return, volatility, slope, quality, ACF/PACF, cycle, structure, and MTF feature snapshots.
 - `Models/`: Naive/Drift, Adaptive Holt, local-linear Kalman, bounded causal AR-Ridge, ensemble, regime, disagreement, conformal radius, multi-horizon residual growth, and market safe-mode gating.
 - `Validation/`: prequential forecast resolution and tester harnesses.
 - `Adaptation/`: evidence-driven diagnostics and sliced interval/ridge-scale candidate evaluation.
@@ -28,17 +29,18 @@ This workspace contains a pure MQL5, non-trading MetaTrader 5 custom indicator i
 
 ## Deep Learning / Hybrid Handling
 
-- Removed the previous custom "neural bounded" implementation because it was not explicitly specified by the Catalog.
-- `Deep Learning` mode remains accepted as an official input value but is routed to conservative Naive/Kalman-dominant inference until the Catalog defines a real Multi-Scale Sequence Expert.
-- `Hybrid` mode uses the defined Statistical + Ridge components only. The undefined Multi-Scale component remains a specification gap.
+- Removed the previous custom "neural bounded" claim because the owner does not want conventional online neural training in MQL5.
+- `Deep Learning` mode remains accepted as an official input value. At this stage it still uses conservative fallback behavior and must be replaced with a real lightweight MQL5-native Multi-Scale Sequence Expert.
+- `Hybrid` mode currently uses the defined Statistical + Ridge components only. It must be extended to include the lightweight Multi-Scale Sequence family when mature.
 - No fabricated neural network is claimed as complete.
 
 ## Fresh Validation Evidence
 
-- Final indicator compile log for the latest independent pass: `compile-evidence-20260813-142059-final.log`.
+- Final indicator compile log for the latest independent pass: `compile-evidence-20260813-151547-final.log`.
 - Final indicator compile result: `0 errors, 0 warnings`.
-- Latest harness compile logs include `compile-evidence-20260813-142059-runtime-harness.log`, `compile-evidence-20260813-142059-deep-harness.log`, `compile-evidence-20260813-142059-chart-harness.log`, `compile-evidence-20260813-142059-mtf-harness.log`, `compile-evidence-20260813-142059-adversarial-harness.log`, and `compile-evidence-20260813-142059-modes-harness.log`; all report `0 errors, 0 warnings`.
-- Latest Strategy Tester evidence: `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`, run window `2026-08-13 14:26-14:28`.
+- Latest harness compile logs include `compile-evidence-20260813-151547-runtime-harness.log`, `compile-evidence-20260813-151547-deep-harness.log`, `compile-evidence-20260813-151547-chart-harness.log`, `compile-evidence-20260813-151547-mtf-harness.log`, `compile-evidence-20260813-151547-adversarial-harness.log`, `compile-evidence-20260813-151547-modes-harness.log`, and `compile-evidence-20260813-151547-selection-harness.log`; all report `0 errors, 0 warnings`.
+- Latest Strategy Tester evidence: `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`, run window `2026-08-13 15:16-15:19`.
+- Selection Data harness: `OnTester result 1`, `failures=0`, direct independent-channel contract checks passed.
 - Adversarial full-history / anti-repaint harness: `OnTester result 1`, `failures=0`, `deep_bars=8437`, `oldest_shift=8387`, `mid_shift=4193`, `anti_repaint=true`.
 - MTF causality harness: `OnTester result 1`, `failures=0`, `samples=234`.
 - Chart-object semantic harness: `OnTester result 1`, `failures=0`, `objects_seen=true`, semantic validation passed with `count=121`.
@@ -48,11 +50,11 @@ This workspace contains a pure MQL5, non-trading MetaTrader 5 custom indicator i
 
 ## Remaining Limits
 
-- `Deep Learning` and the Multi-Scale component of `Hybrid` remain open specification gaps.
+- `Deep Learning` and the Multi-Scale component of `Hybrid` remain owner-resolved but not yet fully implemented.
 - Arbitrary closed-bar history revisions are covered by per-bar fingerprints and a bounded background sweep; detection is progressive rather than an immediate full-history scan on every ordinary tick.
 - AR-Ridge remains intentionally low-dimensional and bounded for MQL5 tick safety; it is not a claim of statistical superiority.
 - No trading, Python, WebRequest, DLL import, external model server, or external API dependency is used.
 
 ## Assessment
 
-The implementation is materially stronger after the adversarial audit and has fresh compile/runtime evidence. It is still blocked from a production-ready declaration by the unresolved Deep Learning / Multi-Scale Sequence Expert specification gap.
+The implementation is materially stronger after the adversarial audit, history-revision audit, and independent Selection Data channel work. It is still not production-ready because the lightweight Multi-Scale Sequence Expert, true Hybrid participation, Analysis Timeframe execution semantics, Fast Path priority, Closed/Live state isolation, candidate/atomic commit, and other clause-level Catalog contracts still require completion and proof.
