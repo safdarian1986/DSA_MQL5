@@ -89,6 +89,17 @@ double BufferHistoricalUp[];
 double BufferHistoricalDown[];
 double BufferAuxiliaryEvent[];
 
+double CandidateBufferAdaptiveTrend[];
+double CandidateBufferSignal[];
+double CandidateBufferUpperBand[];
+double CandidateBufferLowerBand[];
+double CandidateBufferUncertaintyUpper[];
+double CandidateBufferUncertaintyLower[];
+double CandidateBufferRegimeColor[];
+double CandidateBufferHistoricalUp[];
+double CandidateBufferHistoricalDown[];
+double CandidateBufferAuxiliaryEvent[];
+
 double CalcTarget[];
 double CalcForecast[];
 double CalcQuality[];
@@ -110,11 +121,38 @@ double CalcHorizonGrowth[];
 double CalcRidgeState[];
 double CalcBarFingerprint[];
 
+double CandidateCalcTarget[];
+double CandidateCalcForecast[];
+double CandidateCalcQuality[];
+double CandidateCalcModelScore[];
+double CandidateCalcDisagreement[];
+double CandidateCalcDrift[];
+double CandidateCalcVolatility[];
+double CandidateCalcSlope[];
+double CandidateCalcAbsoluteError[];
+double CandidateCalcCoverage[];
+double CandidateCalcConformalRadius[];
+double CandidateCalcPacf[];
+double CandidateCalcSafeModeScore[];
+double CandidateCalcStressScore[];
+double CandidateCalcForecastH2[];
+double CandidateCalcForecastH4[];
+double CandidateCalcForecastH8[];
+double CandidateCalcHorizonGrowth[];
+double CandidateCalcRidgeState[];
+double CandidateCalcBarFingerprint[];
+
 DSARuntimeSchedulerState RuntimeState;
 DSAInputContract InputContract;
 DSAAdaptiveTuningState AdaptiveTuning;
 DSAAdaptiveJobState AdaptiveJob;
 bool DSA_RetainedOutputAvailable = false;
+bool DSA_CandidateBuildActive = false;
+bool DSA_CandidateRejected = false;
+string DSA_CandidateInputFingerprint = "";
+string DSA_CandidateHistoryFingerprint = "";
+int DSA_CandidateBuildTotal = 0;
+long DSA_CandidateStateVersion = 0;
 
 void DSA_SetPlotDefaults()
 {
@@ -229,6 +267,145 @@ void DSA_ResetBuffers()
    ArrayInitialize(CalcRidgeState,EMPTY_VALUE);
    ArrayInitialize(CalcBarFingerprint,EMPTY_VALUE);
    DSA_RetainedOutputAvailable = false;
+   DSA_CandidateBuildActive = false;
+   DSA_CandidateRejected = false;
+   DSA_CandidateInputFingerprint = "";
+   DSA_CandidateHistoryFingerprint = "";
+   DSA_CandidateBuildTotal = 0;
+   DSA_CandidateStateVersion = 0;
+}
+
+void DSA_SetCandidateSeries()
+{
+   ArraySetAsSeries(CandidateBufferAdaptiveTrend,true);
+   ArraySetAsSeries(CandidateBufferSignal,true);
+   ArraySetAsSeries(CandidateBufferUpperBand,true);
+   ArraySetAsSeries(CandidateBufferLowerBand,true);
+   ArraySetAsSeries(CandidateBufferUncertaintyUpper,true);
+   ArraySetAsSeries(CandidateBufferUncertaintyLower,true);
+   ArraySetAsSeries(CandidateBufferRegimeColor,true);
+   ArraySetAsSeries(CandidateBufferHistoricalUp,true);
+   ArraySetAsSeries(CandidateBufferHistoricalDown,true);
+   ArraySetAsSeries(CandidateBufferAuxiliaryEvent,true);
+   ArraySetAsSeries(CandidateCalcTarget,true);
+   ArraySetAsSeries(CandidateCalcForecast,true);
+   ArraySetAsSeries(CandidateCalcQuality,true);
+   ArraySetAsSeries(CandidateCalcModelScore,true);
+   ArraySetAsSeries(CandidateCalcDisagreement,true);
+   ArraySetAsSeries(CandidateCalcDrift,true);
+   ArraySetAsSeries(CandidateCalcVolatility,true);
+   ArraySetAsSeries(CandidateCalcSlope,true);
+   ArraySetAsSeries(CandidateCalcAbsoluteError,true);
+   ArraySetAsSeries(CandidateCalcCoverage,true);
+   ArraySetAsSeries(CandidateCalcConformalRadius,true);
+   ArraySetAsSeries(CandidateCalcPacf,true);
+   ArraySetAsSeries(CandidateCalcSafeModeScore,true);
+   ArraySetAsSeries(CandidateCalcStressScore,true);
+   ArraySetAsSeries(CandidateCalcForecastH2,true);
+   ArraySetAsSeries(CandidateCalcForecastH4,true);
+   ArraySetAsSeries(CandidateCalcForecastH8,true);
+   ArraySetAsSeries(CandidateCalcHorizonGrowth,true);
+   ArraySetAsSeries(CandidateCalcRidgeState,true);
+   ArraySetAsSeries(CandidateCalcBarFingerprint,true);
+}
+
+bool DSA_ResizeCandidateBuffers(const int rates_total)
+{
+   bool ok = true;
+   ok = ok && (ArrayResize(CandidateBufferAdaptiveTrend,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateBufferSignal,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateBufferUpperBand,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateBufferLowerBand,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateBufferUncertaintyUpper,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateBufferUncertaintyLower,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateBufferRegimeColor,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateBufferHistoricalUp,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateBufferHistoricalDown,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateBufferAuxiliaryEvent,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateCalcTarget,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateCalcForecast,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateCalcQuality,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateCalcModelScore,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateCalcDisagreement,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateCalcDrift,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateCalcVolatility,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateCalcSlope,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateCalcAbsoluteError,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateCalcCoverage,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateCalcConformalRadius,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateCalcPacf,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateCalcSafeModeScore,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateCalcStressScore,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateCalcForecastH2,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateCalcForecastH4,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateCalcForecastH8,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateCalcHorizonGrowth,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateCalcRidgeState,rates_total) == rates_total);
+   ok = ok && (ArrayResize(CandidateCalcBarFingerprint,rates_total) == rates_total);
+   if(ok)
+      DSA_SetCandidateSeries();
+   return ok;
+}
+
+void DSA_ResetCandidateBuffers()
+{
+   ArrayInitialize(CandidateBufferAdaptiveTrend,EMPTY_VALUE);
+   ArrayInitialize(CandidateBufferSignal,EMPTY_VALUE);
+   ArrayInitialize(CandidateBufferUpperBand,EMPTY_VALUE);
+   ArrayInitialize(CandidateBufferLowerBand,EMPTY_VALUE);
+   ArrayInitialize(CandidateBufferUncertaintyUpper,EMPTY_VALUE);
+   ArrayInitialize(CandidateBufferUncertaintyLower,EMPTY_VALUE);
+   ArrayInitialize(CandidateBufferRegimeColor,EMPTY_VALUE);
+   ArrayInitialize(CandidateBufferHistoricalUp,EMPTY_VALUE);
+   ArrayInitialize(CandidateBufferHistoricalDown,EMPTY_VALUE);
+   ArrayInitialize(CandidateBufferAuxiliaryEvent,EMPTY_VALUE);
+   ArrayInitialize(CandidateCalcTarget,EMPTY_VALUE);
+   ArrayInitialize(CandidateCalcForecast,EMPTY_VALUE);
+   ArrayInitialize(CandidateCalcQuality,EMPTY_VALUE);
+   ArrayInitialize(CandidateCalcModelScore,EMPTY_VALUE);
+   ArrayInitialize(CandidateCalcDisagreement,EMPTY_VALUE);
+   ArrayInitialize(CandidateCalcDrift,EMPTY_VALUE);
+   ArrayInitialize(CandidateCalcVolatility,EMPTY_VALUE);
+   ArrayInitialize(CandidateCalcSlope,EMPTY_VALUE);
+   ArrayInitialize(CandidateCalcAbsoluteError,EMPTY_VALUE);
+   ArrayInitialize(CandidateCalcCoverage,EMPTY_VALUE);
+   ArrayInitialize(CandidateCalcConformalRadius,EMPTY_VALUE);
+   ArrayInitialize(CandidateCalcPacf,EMPTY_VALUE);
+   ArrayInitialize(CandidateCalcSafeModeScore,EMPTY_VALUE);
+   ArrayInitialize(CandidateCalcStressScore,EMPTY_VALUE);
+   ArrayInitialize(CandidateCalcForecastH2,EMPTY_VALUE);
+   ArrayInitialize(CandidateCalcForecastH4,EMPTY_VALUE);
+   ArrayInitialize(CandidateCalcForecastH8,EMPTY_VALUE);
+   ArrayInitialize(CandidateCalcHorizonGrowth,EMPTY_VALUE);
+   ArrayInitialize(CandidateCalcRidgeState,EMPTY_VALUE);
+   ArrayInitialize(CandidateCalcBarFingerprint,EMPTY_VALUE);
+}
+
+void DSA_ClearCandidateBuild()
+{
+   DSA_CandidateBuildActive = false;
+   DSA_CandidateInputFingerprint = "";
+   DSA_CandidateHistoryFingerprint = "";
+   DSA_CandidateBuildTotal = 0;
+   DSA_CandidateStateVersion = 0;
+}
+
+void DSA_StampCandidateBuild(const int rates_total)
+{
+   DSA_CandidateRejected = false;
+   DSA_CandidateInputFingerprint = RuntimeState.input_fingerprint;
+   DSA_CandidateHistoryFingerprint = RuntimeState.history_fingerprint;
+   DSA_CandidateBuildTotal = rates_total;
+   DSA_CandidateStateVersion = RuntimeState.active_state_version;
+}
+
+bool DSA_CandidateBuildMatches(const int rates_total)
+{
+   return (DSA_CandidateBuildActive &&
+           DSA_CandidateInputFingerprint == RuntimeState.input_fingerprint &&
+           DSA_CandidateHistoryFingerprint == RuntimeState.history_fingerprint &&
+           DSA_CandidateBuildTotal == rates_total &&
+           DSA_CandidateStateVersion == RuntimeState.active_state_version);
 }
 
 bool DSA_HasRetainedOutput()
@@ -246,12 +423,33 @@ void DSA_PrepareBackgroundBuild(const int rates_total,const string history_finge
    const bool candidate_matches = (DSA_CanCommitCandidate(RuntimeState,InputContract.fingerprint,history_fingerprint) &&
                                    RuntimeState.build_total == rates_total &&
                                    RuntimeState.build_cursor >= 0);
-   if(candidate_matches)
+   if(candidate_matches && !DSA_CandidateRejected &&
+      (!DSA_CandidateBuildActive || DSA_CandidateBuildMatches(rates_total)))
       return;
 
-   if(!DSA_HasRetainedOutput())
+   const bool retained_output = DSA_HasRetainedOutput();
+   DSA_CandidateBuildActive = retained_output;
+   if(DSA_CandidateBuildActive)
+   {
+      if(!DSA_ResizeCandidateBuffers(rates_total))
+      {
+         DSA_CandidateBuildActive = false;
+         DSA_ResetBuffers();
+      }
+      else
+         DSA_ResetCandidateBuffers();
+   }
+   else
       DSA_ResetBuffers();
+
    DSA_StartProgressiveBuild(RuntimeState,rates_total,InputContract.fingerprint,history_fingerprint);
+   if(DSA_CandidateBuildActive)
+      DSA_StampCandidateBuild(rates_total);
+   else
+   {
+      DSA_ClearCandidateBuild();
+      DSA_CandidateRejected = false;
+   }
 }
 
 void DSA_ProcessBar(const int index,
@@ -265,6 +463,58 @@ void DSA_ProcessBar(const int index,
                     const long &tick_volume[],
                     const int &spread[])
 {
+   DSA_ProcessBarInto(index,rates_total,live_bar,time,open,high,low,close,tick_volume,spread,
+                      BufferAdaptiveTrend,BufferSignal,BufferUpperBand,BufferLowerBand,
+                      BufferUncertaintyUpper,BufferUncertaintyLower,BufferRegimeColor,
+                      BufferHistoricalUp,BufferHistoricalDown,BufferAuxiliaryEvent,
+                      CalcTarget,CalcForecast,CalcQuality,CalcModelScore,CalcDisagreement,
+                      CalcDrift,CalcVolatility,CalcSlope,CalcAbsoluteError,CalcCoverage,
+                      CalcConformalRadius,CalcPacf,CalcSafeModeScore,CalcStressScore,
+                      CalcForecastH2,CalcForecastH4,CalcForecastH8,CalcHorizonGrowth,
+                      CalcRidgeState,CalcBarFingerprint);
+}
+
+void DSA_ProcessBarInto(const int index,
+                        const int rates_total,
+                        const bool live_bar,
+                        const datetime &time[],
+                        const double &open[],
+                        const double &high[],
+                        const double &low[],
+                        const double &close[],
+                        const long &tick_volume[],
+                        const int &spread[],
+                        double &trend_buffer[],
+                        double &signal_buffer[],
+                        double &upper_band_buffer[],
+                        double &lower_band_buffer[],
+                        double &uncertainty_upper_buffer[],
+                        double &uncertainty_lower_buffer[],
+                        double &regime_buffer[],
+                        double &up_event_buffer[],
+                        double &down_event_buffer[],
+                        double &aux_event_buffer[],
+                        double &target_buffer[],
+                        double &forecast_buffer[],
+                        double &quality_buffer[],
+                        double &model_score_buffer[],
+                        double &disagreement_buffer[],
+                        double &drift_buffer[],
+                        double &volatility_buffer[],
+                        double &slope_buffer[],
+                        double &absolute_error_buffer[],
+                        double &coverage_buffer[],
+                        double &conformal_radius_buffer[],
+                        double &pacf_buffer[],
+                        double &safe_mode_buffer[],
+                        double &stress_buffer[],
+                        double &forecast_h2_buffer[],
+                        double &forecast_h4_buffer[],
+                        double &forecast_h8_buffer[],
+                        double &horizon_growth_buffer[],
+                        double &ridge_state_buffer[],
+                        double &bar_fingerprint_buffer[])
+{
    DSAFeatureSnapshot feature;
    DSAModelSnapshot model;
    DSAValidationSnapshot validation;
@@ -272,42 +522,42 @@ void DSA_ProcessBar(const int index,
    DSAAdaptiveSnapshot adaptive;
 
    DSA_BuildFeatureSnapshot(index,rates_total,InputContract,time,open,high,low,close,tick_volume,spread,
-                            live_bar,CalcTarget,BufferAdaptiveTrend,CalcSlope,CalcVolatility,CalcQuality,feature);
+                            live_bar,target_buffer,trend_buffer,slope_buffer,volatility_buffer,quality_buffer,feature);
 
    DSA_ComputeModels(index,rates_total,InputContract,feature,open,high,low,close,
-                      CalcTarget,BufferAdaptiveTrend,BufferSignal,
-                      CalcForecast,CalcForecastH2,CalcForecastH4,CalcForecastH8,
-                      CalcVolatility,BufferUncertaintyUpper,BufferUncertaintyLower,
-                      CalcAbsoluteError,BufferRegimeColor,CalcRidgeState,
+                      target_buffer,trend_buffer,signal_buffer,
+                      forecast_buffer,forecast_h2_buffer,forecast_h4_buffer,forecast_h8_buffer,
+                      volatility_buffer,uncertainty_upper_buffer,uncertainty_lower_buffer,
+                      absolute_error_buffer,regime_buffer,ridge_state_buffer,
                       AdaptiveTuning.ridge_lambda_scale,AdaptiveTuning.interval_scale,live_bar,model);
 
-   DSA_ValidatePrequential(index,rates_total,feature,model,CalcTarget,CalcForecast,
-                           BufferUncertaintyUpper,BufferUncertaintyLower,validation);
+   DSA_ValidatePrequential(index,rates_total,feature,model,target_buffer,forecast_buffer,
+                           uncertainty_upper_buffer,uncertainty_lower_buffer,validation);
 
    DSA_ComputeAdaptiveDiagnostics(feature,model,validation,RuntimeState.runtime_load,adaptive);
 
-   DSA_DetectEvents(index,rates_total,high,low,feature,model,validation,BufferAdaptiveTrend,event);
+   DSA_DetectEvents(index,rates_total,high,low,feature,model,validation,trend_buffer,event);
 
-   CalcTarget[index] = feature.target;
-   CalcForecast[index] = model.central_forecast;
-   CalcQuality[index] = feature.quality_score;
-   CalcModelScore[index] = validation.model_score;
-   CalcDisagreement[index] = model.disagreement;
-   CalcDrift[index] = validation.drift_score;
-   CalcVolatility[index] = feature.volatility;
-   CalcSlope[index] = model.kalman_slope;
-   CalcAbsoluteError[index] = validation.absolute_error;
-   CalcCoverage[index] = validation.coverage_hit;
-   CalcConformalRadius[index] = model.interval_radius;
-   CalcPacf[index] = feature.pacf2;
-   CalcSafeModeScore[index] = adaptive.safe_mode_score;
-   CalcStressScore[index] = adaptive.stress_score;
-   CalcForecastH2[index] = DSA_ProjectForecastPath(model.central_forecast,model.kalman_slope,2);
-   CalcForecastH4[index] = DSA_ProjectForecastPath(model.central_forecast,model.kalman_slope,4);
-   CalcForecastH8[index] = DSA_ProjectForecastPath(model.central_forecast,model.kalman_slope,8);
-   CalcHorizonGrowth[index] = model.horizon_growth;
-   CalcRidgeState[index] = model.ridge_forecast;
-   CalcBarFingerprint[index] = DSA_BarRevisionFingerprint(index,rates_total,time,open,high,low,close,tick_volume,spread);
+   target_buffer[index] = feature.target;
+   forecast_buffer[index] = model.central_forecast;
+   quality_buffer[index] = feature.quality_score;
+   model_score_buffer[index] = validation.model_score;
+   disagreement_buffer[index] = model.disagreement;
+   drift_buffer[index] = validation.drift_score;
+   volatility_buffer[index] = feature.volatility;
+   slope_buffer[index] = model.kalman_slope;
+   absolute_error_buffer[index] = validation.absolute_error;
+   coverage_buffer[index] = validation.coverage_hit;
+   conformal_radius_buffer[index] = model.interval_radius;
+   pacf_buffer[index] = feature.pacf2;
+   safe_mode_buffer[index] = adaptive.safe_mode_score;
+   stress_buffer[index] = adaptive.stress_score;
+   forecast_h2_buffer[index] = DSA_ProjectForecastPath(model.central_forecast,model.kalman_slope,2);
+   forecast_h4_buffer[index] = DSA_ProjectForecastPath(model.central_forecast,model.kalman_slope,4);
+   forecast_h8_buffer[index] = DSA_ProjectForecastPath(model.central_forecast,model.kalman_slope,8);
+   horizon_growth_buffer[index] = model.horizon_growth;
+   ridge_state_buffer[index] = model.ridge_forecast;
+   bar_fingerprint_buffer[index] = DSA_BarRevisionFingerprint(index,rates_total,time,open,high,low,close,tick_volume,spread);
 
    if(live_bar && adaptive.recalibration_required && RuntimeState.build_complete)
    {
@@ -315,35 +565,98 @@ void DSA_ProcessBar(const int index,
       DSA_StartAdaptiveJob(AdaptiveJob,RuntimeState,adaptive.reason_mask);
    }
 
-   BufferAdaptiveTrend[index] = model.ensemble_state;
-   BufferSignal[index] = model.holt_level;
-   BufferUpperBand[index] = model.ensemble_state + model.band_radius;
-   BufferLowerBand[index] = model.ensemble_state - model.band_radius;
-   BufferUncertaintyUpper[index] = model.central_forecast + model.interval_radius;
-   BufferUncertaintyLower[index] = model.central_forecast - model.interval_radius;
-   BufferRegimeColor[index] = (double)model.regime;
+   trend_buffer[index] = model.ensemble_state;
+   signal_buffer[index] = model.holt_level;
+   upper_band_buffer[index] = model.ensemble_state + model.band_radius;
+   lower_band_buffer[index] = model.ensemble_state - model.band_radius;
+   uncertainty_upper_buffer[index] = model.central_forecast + model.interval_radius;
+   uncertainty_lower_buffer[index] = model.central_forecast - model.interval_radius;
+   regime_buffer[index] = (double)model.regime;
 
    if(!InputContract.historical_display && !live_bar)
    {
-      BufferAdaptiveTrend[index] = EMPTY_VALUE;
-      BufferSignal[index] = EMPTY_VALUE;
-      BufferUpperBand[index] = EMPTY_VALUE;
-      BufferLowerBand[index] = EMPTY_VALUE;
-      BufferUncertaintyUpper[index] = EMPTY_VALUE;
-      BufferUncertaintyLower[index] = EMPTY_VALUE;
+      trend_buffer[index] = EMPTY_VALUE;
+      signal_buffer[index] = EMPTY_VALUE;
+      upper_band_buffer[index] = EMPTY_VALUE;
+      lower_band_buffer[index] = EMPTY_VALUE;
+      uncertainty_upper_buffer[index] = EMPTY_VALUE;
+      uncertainty_lower_buffer[index] = EMPTY_VALUE;
    }
 
    if(InputContract.event_display)
    {
-      BufferHistoricalUp[index] = (event.up_pressure ? event.up_price : EMPTY_VALUE);
-      BufferHistoricalDown[index] = (event.down_pressure ? event.down_price : EMPTY_VALUE);
-      BufferAuxiliaryEvent[index] = (event.auxiliary_event ? event.auxiliary_price : EMPTY_VALUE);
+      up_event_buffer[index] = (event.up_pressure ? event.up_price : EMPTY_VALUE);
+      down_event_buffer[index] = (event.down_pressure ? event.down_price : EMPTY_VALUE);
+      aux_event_buffer[index] = (event.auxiliary_event ? event.auxiliary_price : EMPTY_VALUE);
    }
    else
    {
-      BufferHistoricalUp[index] = EMPTY_VALUE;
-      BufferHistoricalDown[index] = EMPTY_VALUE;
-      BufferAuxiliaryEvent[index] = EMPTY_VALUE;
+      up_event_buffer[index] = EMPTY_VALUE;
+      down_event_buffer[index] = EMPTY_VALUE;
+      aux_event_buffer[index] = EMPTY_VALUE;
+   }
+}
+
+void DSA_ProcessCandidateBar(const int index,
+                             const int rates_total,
+                             const datetime &time[],
+                             const double &open[],
+                             const double &high[],
+                             const double &low[],
+                             const double &close[],
+                             const long &tick_volume[],
+                             const int &spread[])
+{
+   DSA_ProcessBarInto(index,rates_total,false,time,open,high,low,close,tick_volume,spread,
+                      CandidateBufferAdaptiveTrend,CandidateBufferSignal,
+                      CandidateBufferUpperBand,CandidateBufferLowerBand,
+                      CandidateBufferUncertaintyUpper,CandidateBufferUncertaintyLower,
+                      CandidateBufferRegimeColor,CandidateBufferHistoricalUp,
+                      CandidateBufferHistoricalDown,CandidateBufferAuxiliaryEvent,
+                      CandidateCalcTarget,CandidateCalcForecast,CandidateCalcQuality,
+                      CandidateCalcModelScore,CandidateCalcDisagreement,CandidateCalcDrift,
+                      CandidateCalcVolatility,CandidateCalcSlope,CandidateCalcAbsoluteError,
+                      CandidateCalcCoverage,CandidateCalcConformalRadius,CandidateCalcPacf,
+                      CandidateCalcSafeModeScore,CandidateCalcStressScore,
+                      CandidateCalcForecastH2,CandidateCalcForecastH4,CandidateCalcForecastH8,
+                      CandidateCalcHorizonGrowth,CandidateCalcRidgeState,CandidateCalcBarFingerprint);
+}
+
+void DSA_CommitCandidateBuffers(const int rates_total)
+{
+   const int total = MathMin(rates_total,ArraySize(CandidateCalcTarget));
+   for(int index = total - 1; index >= 1; --index)
+   {
+      BufferAdaptiveTrend[index] = CandidateBufferAdaptiveTrend[index];
+      BufferSignal[index] = CandidateBufferSignal[index];
+      BufferUpperBand[index] = CandidateBufferUpperBand[index];
+      BufferLowerBand[index] = CandidateBufferLowerBand[index];
+      BufferUncertaintyUpper[index] = CandidateBufferUncertaintyUpper[index];
+      BufferUncertaintyLower[index] = CandidateBufferUncertaintyLower[index];
+      BufferRegimeColor[index] = CandidateBufferRegimeColor[index];
+      BufferHistoricalUp[index] = CandidateBufferHistoricalUp[index];
+      BufferHistoricalDown[index] = CandidateBufferHistoricalDown[index];
+      BufferAuxiliaryEvent[index] = CandidateBufferAuxiliaryEvent[index];
+      CalcTarget[index] = CandidateCalcTarget[index];
+      CalcForecast[index] = CandidateCalcForecast[index];
+      CalcQuality[index] = CandidateCalcQuality[index];
+      CalcModelScore[index] = CandidateCalcModelScore[index];
+      CalcDisagreement[index] = CandidateCalcDisagreement[index];
+      CalcDrift[index] = CandidateCalcDrift[index];
+      CalcVolatility[index] = CandidateCalcVolatility[index];
+      CalcSlope[index] = CandidateCalcSlope[index];
+      CalcAbsoluteError[index] = CandidateCalcAbsoluteError[index];
+      CalcCoverage[index] = CandidateCalcCoverage[index];
+      CalcConformalRadius[index] = CandidateCalcConformalRadius[index];
+      CalcPacf[index] = CandidateCalcPacf[index];
+      CalcSafeModeScore[index] = CandidateCalcSafeModeScore[index];
+      CalcStressScore[index] = CandidateCalcStressScore[index];
+      CalcForecastH2[index] = CandidateCalcForecastH2[index];
+      CalcForecastH4[index] = CandidateCalcForecastH4[index];
+      CalcForecastH8[index] = CandidateCalcForecastH8[index];
+      CalcHorizonGrowth[index] = CandidateCalcHorizonGrowth[index];
+      CalcRidgeState[index] = CandidateCalcRidgeState[index];
+      CalcBarFingerprint[index] = CandidateCalcBarFingerprint[index];
    }
 }
 
@@ -368,7 +681,10 @@ void DSA_ProcessHistoricalSlice(const int rates_total,
 
    while(cursor >= 1 && processed < budget)
    {
-      DSA_ProcessBar(cursor,rates_total,false,time,open,high,low,close,tick_volume,spread);
+      if(DSA_CandidateBuildActive)
+         DSA_ProcessCandidateBar(cursor,rates_total,time,open,high,low,close,tick_volume,spread);
+      else
+         DSA_ProcessBar(cursor,rates_total,false,time,open,high,low,close,tick_volume,spread);
       --cursor;
       ++processed;
    }
@@ -378,6 +694,20 @@ void DSA_ProcessHistoricalSlice(const int rates_total,
 
    if(RuntimeState.build_cursor < 1)
    {
+      if(DSA_CandidateBuildActive)
+      {
+         if(!DSA_CandidateBuildMatches(rates_total))
+         {
+            DSA_ClearCandidateBuild();
+            DSA_CandidateRejected = true;
+            DSA_CoalesceTrigger(RuntimeState,DSA_REASON_HISTORY_REVISION);
+            return;
+         }
+
+         DSA_CommitCandidateBuffers(rates_total);
+         DSA_ClearCandidateBuild();
+         DSA_CandidateRejected = false;
+      }
       DSA_MarkBuildComplete(RuntimeState);
       DSA_RetainedOutputAvailable = true;
    }
@@ -418,9 +748,7 @@ bool DSA_AuditHistoricalRevisionSlice(const int rates_total,
          if(MathAbs(stored - current) > 0.5)
          {
             DSA_CoalesceTrigger(RuntimeState,DSA_REASON_HISTORY_REVISION);
-            if(!DSA_HasRetainedOutput())
-               DSA_ResetBuffers();
-            DSA_StartProgressiveBuild(RuntimeState,rates_total,InputContract.fingerprint,history_fingerprint);
+            DSA_PrepareBackgroundBuild(rates_total,history_fingerprint);
             return true;
          }
       }

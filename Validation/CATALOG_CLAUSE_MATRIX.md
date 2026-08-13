@@ -5,7 +5,7 @@
 - Catalog: `Catalog/DSA_MQL5_EN.docx`, freshly extracted from OOXML.
 - Scientific reference: `Catalog/DataSience-en.docx`, treated as upstream objective, not a literal heavyweight implementation mandate.
 - Owner decision: Deep Learning and Hybrid are no longer permanent specification gaps. They must be implemented as lightweight, causal, MQL5-native multi-scale sequence behavior without conventional online neural training.
-- Current stage: independent Selection Data channels, Fast Path priority guard, Analysis Timeframe primary target path, and closed-bar-before-live commit ordering implemented and validated.
+- Current stage: independent Selection Data channels, Fast Path priority guard, Analysis Timeframe primary target path, closed-bar-before-live commit ordering, and retained-output candidate rebuild implemented and validated.
 
 ## DataScience Crosswalk
 
@@ -42,7 +42,7 @@
 | 12 | Candle 0 Contract | PARTIAL | live `DSA_ProcessLivePath` after closed-bar commit on new bars | Add dedicated live snapshot/state object. |
 | 13 | ClosedState and LiveState | PARTIAL | closed bar 1 is committed before Candle0 live processing on new bars | Add full state-object separation. |
 | 14 | Full History Range | EXACT PASS | adversarial `deep_bars=8437` | Keep full source coverage. |
-| 15 | Progressive Historical Build | PARTIAL | sliced historical build | Preserve old output during candidate rebuild. |
+| 15 | Progressive Historical Build | PARTIAL | sliced historical build with retained-output candidate buffers | Add stale candidate rejection tests. |
 | 16 | Model Maturity | PARTIAL | maturity-based weights | Add sequence maturity and residual maturity gates. |
 | 17 | Adaptive Historical Weight | PARTIAL | Ridge time decay | Broaden evidence-based time weighting. |
 | 18 | Fixed Market Parameters | PARTIAL | some adaptive scales | Classify and adapt market-behavior constants. |
@@ -72,10 +72,10 @@
 | 42 | Phase 10 | PARTIAL | buffers/objects/runtime | station traceability and visual detail incomplete. |
 | 43 | Fast Path Every Tick | EXACT PASS | P0 `DSA_ProcessLivePath` runs before historical slices and adaptive jobs; CI guards call order | Keep invariant. |
 | 44 | Medium Path New Analysis Bar | PARTIAL | analysis-rate primary source exists; host new-bar still drives commit | Detect New Analysis Bar and bind closed-state commit to it. |
-| 45 | Slow Path Evidence-Driven | PARTIAL | adaptive/rebuild triggers | Complete candidate lifecycle. |
-| 46 | Slow Work Slicing | PARTIAL | budgeted slices | Add stronger single-flight/candidate proof. |
+| 45 | Slow Path Evidence-Driven | PARTIAL | adaptive/rebuild triggers and retained-output candidate buffers | Complete candidate lifecycle evidence. |
+| 46 | Slow Work Slicing | PARTIAL | budgeted slices can run against candidate buffers | Add stronger single-flight/candidate proof. |
 | 47 | Full Historical Pass | EXACT PASS | adversarial full-history harness | Keep invariant. |
-| 48 | Atomic State Commit | MISSING | retained-output reset guard exists, but no separate candidate buffers | Implement candidate build and atomic switch. |
+| 48 | Atomic State Commit | PARTIAL | retained-output rebuilds process into candidate buffers and reject stale candidates before commit | Add display-state runtime tests. |
 | 49 | Input Fingerprint | PARTIAL | computational fingerprint exists | Separate display-only inputs from analytical state. |
 | 50 | Input Changes | PARTIAL | input change triggers rebuild | Avoid unnecessary rebuild for display-only changes. |
 | 51 | Graphical Output Contract | PARTIAL | 10 buffers and future objects | Complete graphical vocabulary proof. |
@@ -115,14 +115,14 @@
 | 85 | Normal Tick Contract | PARTIAL | P0 live path precedes historical/adaptive background work | Complete dedicated live-state read/write permissions. |
 | 86 | New-Bar Tick Contract | PARTIAL | Analysis Timeframe target path exists; host new-bar still triggers commit | Implement Analysis Bar commit sequence. |
 | 87 | Heavy Trigger Contract | PARTIAL | reason mask and slices | Add candidate job lifecycle. |
-| 88 | History Revision Contract | PARTIAL | revision detection plus retained-output reset guard | Preserve previous output fully until candidate commit. |
-| 89 | Stale Result Protection | PARTIAL | fingerprint/version checks plus guarded rebuild start | Add explicit stale candidate rejection tests. |
+| 88 | History Revision Contract | PARTIAL | revision detection plus retained-output candidate rebuild | Add explicit revised-history runtime proof. |
+| 89 | Stale Result Protection | PARTIAL | fingerprint/version checks plus stale-candidate rejection guard | Add explicit stale candidate runtime test. |
 | 90 | Ready-for-Production Contract | MISSING | current audit not complete | Requires zero mandatory PARTIAL/MISMATCH/MISSING. |
 
 ## Current Highest-Risk Work Queue
 
-1. Previous-output hold and candidate/atomic commit.
-2. New Analysis Bar commit sequence.
-3. Dedicated ClosedState / LiveState objects.
+1. New Analysis Bar commit sequence.
+2. Dedicated ClosedState / LiveState objects.
+3. Display-state and revised-history runtime proof.
 4. Full feature, volatility, regime, adaptive weights, latency-aware score.
 5. Lightweight Multi-Scale Sequence Expert and true Hybrid ensemble.

@@ -128,8 +128,11 @@ jobs:
           }
 
           if ($indicatorHeader -notmatch 'DSA_RetainedOutputAvailable' -or
-              $indicatorHeader -notmatch 'if\(!DSA_HasRetainedOutput\(\)\)\s+DSA_ResetBuffers\(\);') {
-            throw 'Expected retained-output guard before rebuild buffer resets.'
+              $indicatorHeader -notmatch 'DSA_CandidateBuildActive' -or
+              $indicatorHeader -notmatch 'DSA_CommitCandidateBuffers' -or
+              $indicatorHeader -notmatch 'DSA_CandidateBuildMatches' -or
+              $indicatorHeader -notmatch 'DSA_CandidateRejected') {
+            throw 'Expected retained-output candidate build, stale-candidate guard, and atomic commit support.'
           }
 
           $mqlFiles = Get-ChildItem -Recurse -Force -File -Include '*.mq5','*.mqh' |
