@@ -96,7 +96,7 @@ jobs:
             throw 'Expected 29 mapped indicator buffers, including calculation buffers.'
           }
 
-          $mqlFiles = Get-ChildItem -Recurse -File -Include '*.mq5','*.mqh' |
+          $mqlFiles = Get-ChildItem -Recurse -Force -File -Include '*.mq5','*.mqh' |
             Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' }
 
           $forbiddenPattern = 'OrderSend|OrderSendAsync|CTrade|PositionSelect|PositionGet|WebRequest|#import|Socket|Wininet|kernel32|shell32|EventSetTimer|OnTimer|UpdateInterval|Python'
@@ -115,9 +115,9 @@ jobs:
           }
 
           $textFiles = @()
-          $textFiles += Get-ChildItem -Recurse -File -Include '*.mq5','*.mqh','*.md','*.ini','*.yml','*.yaml' |
+          $textFiles += Get-ChildItem -Recurse -Force -File -Include '*.mq5','*.mqh','*.md','*.ini','*.yml','*.yaml' |
             Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' }
-          $textFiles += Get-Item -LiteralPath '.gitignore'
+          $textFiles += Get-Item -LiteralPath '.gitignore' -Force
 
           foreach ($file in $textFiles) {
             $content = Get-Content -LiteralPath $file.FullName -Raw
