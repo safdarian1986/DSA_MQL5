@@ -5,7 +5,7 @@
 - Catalog: `Catalog/DSA_MQL5_EN.docx`, freshly extracted from OOXML.
 - Scientific reference: `Catalog/DataSience-en.docx`, treated as upstream objective, not a literal heavyweight implementation mandate.
 - Owner decision: Deep Learning and Hybrid are no longer permanent specification gaps. They must be implemented as lightweight, causal, MQL5-native multi-scale sequence behavior without conventional online neural training.
-- Current stage: independent Selection Data channels, Fast Path priority guard, Analysis Timeframe primary target path, New Analysis Bar commit sequencing, retained-output candidate rebuild, feature/regime scoring, and lightweight native sequence expert implemented and validated.
+- Current stage: independent Selection Data channels, Fast Path priority guard, Analysis Timeframe primary target path, New Analysis Bar commit sequencing, retained-output candidate rebuild, feature/regime scoring, lightweight native sequence expert, stress diagnostics, and station traceability implemented and validated.
 
 ## DataScience Crosswalk
 
@@ -32,7 +32,7 @@
 | 2 | MT5 Tool Definition | EXACT PASS | non-trading indicator, static scan | Keep invariant. |
 | 3 | Exact User Input Contract | EXACT PASS | 10 `input` declarations | Keep invariant. |
 | 4 | Tick-Safe Update Contract | PARTIAL | live path now precedes historical/adaptive background slices | Complete Closed/Live state and candidate commit. |
-| 5 | Anti-Freeze and Anti-Lock Contract | PARTIAL | bounded work budget plus P0-before-P8 source guard | Add stronger runtime stress proof. |
+| 5 | Anti-Freeze and Anti-Lock Contract | PASS | bounded work budget, P0-before-P8 source guard, and stress-station harness runtime proof | Broaden duration datasets only if final regression exposes risk. |
 | 6 | Adaptive Runtime Budget | PASS | latency EWMA, load budget, and runtime-cost model-score penalty covered by feature-regime harness | Add wider stress-duration datasets. |
 | 7 | Runtime Priority | PARTIAL | `OnCalculate` prepares rebuild cheaply, then runs P0 before P8 slices | Complete Analysis Bar and lower-priority queue semantics. |
 | 8 | Runtime Busy Guard | PARTIAL | `runtime_busy`, single active flags | Strengthen single-flight commit behavior. |
@@ -58,7 +58,7 @@
 | 28 | Multi-Timeframe Leakage Guard | EXACT PASS | MTF causality harness and primary Analysis Timeframe harness | Keep closed higher-TF candles causal. |
 | 29 | Main Formula Catalog | PARTIAL | formulas exist in modules | Complete missing formulas and traceability. |
 | 30 | Main Algorithm Catalog | PARTIAL | algorithms exist in modules | Complete sequence/adaptation/approval algorithms. |
-| 31 | 10-Phase System Map | PARTIAL | station manifest exists | Bind stations to actual execution evidence. |
+| 31 | 10-Phase System Map | PASS | station manifest validates all 50 station definitions with trace fields and harness proof | Keep manifest aligned with execution responsibilities. |
 | 32 | Station 00 Runtime Foundation | PARTIAL | runtime scheduler state | Complete context/state registry semantics. |
 | 33 | Phase 1 | PARTIAL | input/data contract plus analysis-rate primary snapshot | Complete analysis-bar state lifecycle. |
 | 34 | Phase 2 | PARTIAL | quality score | cleaning/outlier dimensions incomplete. |
@@ -69,7 +69,7 @@
 | 39 | Phase 7 | PARTIAL | forecast objects | scenario semantics need stronger proof. |
 | 40 | Phase 8 | PARTIAL | OOS/conformal basics | metrics and approval incomplete. |
 | 41 | Phase 9 | PARTIAL | event engine basics | event taxonomy/finality proof incomplete. |
-| 42 | Phase 10 | PARTIAL | buffers/objects/runtime | station traceability and visual detail incomplete. |
+| 42 | Phase 10 | PARTIAL | buffers/objects/runtime plus station traceability proof | visual detail vocabulary incomplete. |
 | 43 | Fast Path Every Tick | EXACT PASS | P0 `DSA_ProcessLivePath` runs before historical slices and adaptive jobs; CI guards call order | Keep invariant. |
 | 44 | Medium Path New Analysis Bar | PASS | `DSA_ShouldRunMediumPath`, `DSA_IsAnalysisCommitHostBar`, Analysis Timeframe harness `commit_samples=30`, `hold_samples=90` | Keep analysis-boundary invariant. |
 | 45 | Slow Path Evidence-Driven | PARTIAL | adaptive/rebuild triggers and retained-output candidate buffers | Complete candidate lifecycle evidence. |
@@ -94,7 +94,7 @@
 | 64 | Model Score | PASS | error, disagreement, quality, rolling validation, volatility stress, and runtime-cost penalty | Broaden OOS calibration datasets. |
 | 65 | Drift | PARTIAL | drift score exists | Add distribution/structure triggers. |
 | 66 | Safe Mode | PARTIAL | market safe gating | Validate mode transitions. |
-| 67 | Computational Safe Mode | PARTIAL | runtime load gates optional work | Separate computational safe state. |
+| 67 | Computational Safe Mode | PASS | runtime load gates optional work and stress diagnostics defer heavy work under high load | Keep Fast Path free of diagnostic full scans. |
 | 68 | Event Engine | PARTIAL | up/down/aux events | Add full supported event taxonomy. |
 | 69 | Historical Event Finality | PARTIAL | anti-repaint harness covers outputs | Add event-specific finality test. |
 | 70 | Live Events | PARTIAL | Candle0 provisional events | Isolate from historical commit. |
@@ -107,10 +107,10 @@
 | 77 | Shock Handling | PARTIAL | shock regime and wider intervals | Add shock-specific fallback proof. |
 | 78 | Anomaly Handling | PARTIAL | robust z / quality penalties | Add anomaly semantics and event link. |
 | 79 | Model Approval | PARTIAL | adaptive job updates scales | Add candidate approval/rejection state. |
-| 80 | Stress Diagnostics | MISSING | no dedicated low-priority diagnostics | Implement lightweight deferred diagnostics. |
+| 80 | Stress Diagnostics | PASS | `DSA_ComputeStressDiagnosticsSlice`, `DSA_ProcessStressDiagnostics`, and `DSA_StressStationHarness` prove bounded diagnostics, load deferral, and recalibration request behavior | Broaden duration datasets in final regression if needed. |
 | 81 | Internal Output Structure | PARTIAL | buffers and snapshots | Add traceable state/output mapping. |
 | 82 | Code Architecture | PARTIAL | consolidated modules | Add real state components only where behavior needs them. |
-| 83 | Standard Station Contract | PARTIAL | station manifest metadata | Link station fields to execution/tests. |
+| 83 | Standard Station Contract | PASS | manifest covers required state, validity, error state, output, mutation permission, dependencies, validation tag, priority, cost, live/closed flags, deferral, slicing, and heavy-task semantics for all 50 stations | Keep compact manifest; no artificial station classes required. |
 | 84 | State Mutation | PARTIAL | explicit ClosedState/LiveState snapshots exist, but some model internals still use shared buffers | Broaden mutation-permission enforcement. |
 | 85 | Normal Tick Contract | PARTIAL | P0 live path derives LiveState from ClosedState before rendering | Add broader live component tests. |
 | 86 | New-Bar Tick Contract | PARTIAL | New Analysis Bar detection commits ClosedState before live processing | Add mature forecast resolution/online-state tests. |
@@ -121,6 +121,6 @@
 
 ## Current Highest-Risk Work Queue
 
-1. Stress diagnostics and station traceability.
-2. Event taxonomy, visual vocabulary, and broader calibration datasets.
-3. Adaptive approval/rejection lifecycle and broader trigger tests.
+1. Event taxonomy, visual vocabulary, and broader calibration datasets.
+2. Adaptive approval/rejection lifecycle and broader trigger tests.
+3. Remaining partial data-quality, model-state, and live-event contracts.

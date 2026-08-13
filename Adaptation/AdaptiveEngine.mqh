@@ -14,6 +14,25 @@ struct DSAAdaptiveSnapshot
    bool recalibration_required;
 };
 
+struct DSAStressDiagnosticSnapshot
+{
+   bool diagnostics_available;
+   bool defer_heavy_work;
+   bool request_recalibration;
+   bool stress_event;
+   int sampled_bars;
+   int processed_bars;
+   int high_stress_bars;
+   int high_load_bars;
+   int reason_mask;
+   double average_stress;
+   double peak_stress;
+   double average_safe_mode;
+   double average_disagreement;
+   double average_model_risk;
+   double latency_pressure;
+};
+
 struct DSAAdaptiveTuningState
 {
    double interval_scale;
@@ -50,6 +69,25 @@ void DSA_InitAdaptiveJob(DSAAdaptiveJobState &job)
    job.best_score = DBL_MAX;
    job.best_ridge_score = DBL_MAX;
    job.job_version = 0;
+}
+
+void DSA_InitStressDiagnostics(DSAStressDiagnosticSnapshot &diagnostics)
+{
+   diagnostics.diagnostics_available = false;
+   diagnostics.defer_heavy_work = false;
+   diagnostics.request_recalibration = false;
+   diagnostics.stress_event = false;
+   diagnostics.sampled_bars = 0;
+   diagnostics.processed_bars = 0;
+   diagnostics.high_stress_bars = 0;
+   diagnostics.high_load_bars = 0;
+   diagnostics.reason_mask = DSA_REASON_NONE;
+   diagnostics.average_stress = 0.0;
+   diagnostics.peak_stress = 0.0;
+   diagnostics.average_safe_mode = 0.0;
+   diagnostics.average_disagreement = 0.0;
+   diagnostics.average_model_risk = 0.0;
+   diagnostics.latency_pressure = 0.0;
 }
 
 void DSA_ComputeAdaptiveDiagnostics(DSAFeatureSnapshot &feature,
@@ -113,6 +151,111 @@ void DSA_ComputeAdaptiveDiagnostics(DSAFeatureSnapshot &feature,
       adaptive.reason_mask |= DSA_REASON_MODEL_INSTABILITY;
 
    adaptive.recalibration_required = (adaptive.reason_mask != DSA_REASON_NONE);
+}
+
+void DSA_ComputeStressDiagnosticsSlice(const int rates_total,
+                                       const int start_cursor,
+                                       const int budget,
+                                       const double runtime_load,
+                                       const double &stress_buffer[],
+                                       const double &safe_mode_buffer[],
+                                       const double &model_score_buffer[],
+                                       const double &disagreement_buffer[],
+                                       DSAStressDiagnosticSnapshot &diagnostics,
+                                       int &next_cursor)
+{
+   DSA_InitStressDiagnostics(diagnostics);
+   next_cursor = start_cursor;
+
+   if(rates_total < 8 || budget <= 0)
+      return;
+
+   int cursor = start_cursor;
+   if(cursor < 1 || cursor >= rates_total)
+      cursor = rates_total - 1;
+
+   const int slice_budget = MathMax(1,MathMin(budget,rates_total - 1));
+   double stress_sum = 0.0;
+   double safe_sum = 0.0;
+   double disagreement_sum = 0.0;
+   double model_risk_sum = 0.0;
+   double peak_stress = 0.0;
+   int sampled = 0;
+   int processed = 0;
+   int high_stress = 0;
+   int high_load = 0;
+
+   while(processed < slice_budget && cursor >= 1)
+   {
+      const double stress = (DSA_HasValue(stress_buffer[cursor]) ?
+                             DSA_Clamp(stress_buffer[cursor],0.0,1.0) : EMPTY_VALUE);
+      const double safe = (DSA_HasValue(safe_mode_buffer[cursor]) ?
+                           DSA_Clamp(safe_mode_buffer[cursor],0.0,1.0) : EMPTY_VALUE);
+      const double disagreement = (DSA_HasValue(disagreement_buffer[cursor]) ?
+                                   DSA_Clamp(disagreement_buffer[cursor],0.0,1.0) : 0.0);
+      const double model_score = (DSA_HasValue(model_score_buffer[cursor]) ?
+                                  DSA_Clamp(model_score_buffer[cursor],0.0,100.0) : 60.0);
+
+      if(DSA_HasValue(stress) || DSA_HasValue(safe))
+      {
+         const double stress_value = (DSA_HasValue(stress) ? stress : 0.0);
+         const double safe_value = (DSA_HasValue(safe) ? safe : 0.0);
+         const double model_risk = 1.0 - model_score / 100.0;
+
+         stress_sum += stress_value;
+         safe_sum += safe_value;
+         disagreement_sum += disagreement;
+         model_risk_sum += model_risk;
+         peak_stress = MathMax(peak_stress,stress_value);
+         if(stress_value > 0.62 || safe_value > 0.65)
+            ++high_stress;
+         if(runtime_load > 0.80)
+            ++high_load;
+         ++sampled;
+      }
+
+      --cursor;
+      ++processed;
+   }
+
+   if(cursor < 1)
+      cursor = rates_total - 1;
+   next_cursor = cursor;
+
+   diagnostics.processed_bars = processed;
+   diagnostics.sampled_bars = sampled;
+   if(sampled <= 0)
+      return;
+
+   diagnostics.diagnostics_available = true;
+   diagnostics.high_stress_bars = high_stress;
+   diagnostics.high_load_bars = high_load;
+   diagnostics.average_stress = stress_sum / (double)sampled;
+   diagnostics.peak_stress = peak_stress;
+   diagnostics.average_safe_mode = safe_sum / (double)sampled;
+   diagnostics.average_disagreement = disagreement_sum / (double)sampled;
+   diagnostics.average_model_risk = model_risk_sum / (double)sampled;
+   diagnostics.latency_pressure = DSA_Clamp(runtime_load / 1.50,0.0,1.0);
+
+   diagnostics.reason_mask = DSA_REASON_NONE;
+   if(diagnostics.average_stress > 0.55 || diagnostics.peak_stress > 0.85)
+      diagnostics.reason_mask |= DSA_REASON_MODEL_INSTABILITY;
+   if(diagnostics.average_model_risk > 0.40)
+      diagnostics.reason_mask |= DSA_REASON_FORECAST_DEGRADATION;
+   if(diagnostics.average_safe_mode > 0.55)
+      diagnostics.reason_mask |= DSA_REASON_LOW_CONFIDENCE;
+   if(diagnostics.average_disagreement > 0.60)
+      diagnostics.reason_mask |= DSA_REASON_MODEL_INSTABILITY;
+   if(diagnostics.average_stress > 0.70)
+      diagnostics.reason_mask |= DSA_REASON_FEATURE_INSTABILITY;
+
+   diagnostics.defer_heavy_work = (runtime_load > 0.85 ||
+                                   (diagnostics.peak_stress > 0.92 &&
+                                    diagnostics.average_model_risk > 0.40));
+   diagnostics.request_recalibration = (diagnostics.reason_mask != DSA_REASON_NONE &&
+                                        !diagnostics.defer_heavy_work);
+   const int required_events = MathMax(2,diagnostics.sampled_bars / 4);
+   diagnostics.stress_event = (diagnostics.high_stress_bars >= required_events);
 }
 
 void DSA_StartAdaptiveJob(DSAAdaptiveJobState &job,

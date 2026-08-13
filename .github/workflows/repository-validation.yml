@@ -55,6 +55,7 @@ jobs:
             'Validation/DSA_HistoryRevisionHarness.mq5',
             'Validation/DSA_FeatureRegimeHarness.mq5',
             'Validation/DSA_SequenceExpertHarness.mq5',
+            'Validation/DSA_StressStationHarness.mq5',
             'Validation/DSA_RuntimeHarness.mq5',
             'Validation/DSA_DeepLearningHarness.mq5',
             'Validation/RuntimeTesterAdversarial.ini',
@@ -68,6 +69,7 @@ jobs:
             'Validation/RuntimeTesterHistoryRevision.ini',
             'Validation/RuntimeTesterFeatureRegime.ini',
             'Validation/RuntimeTesterSequence.ini',
+            'Validation/RuntimeTesterStressStation.ini',
             'Validation/RuntimeTester.ini',
             'Validation/RuntimeTesterDeep.ini'
           )
@@ -166,6 +168,23 @@ jobs:
             throw 'Expected native sequence expert and Deep/Hybrid participation proof support.'
           }
 
+          $stationManifest = Get-Content -LiteralPath 'Stations/StationManifest.mqh' -Raw
+          $stressStationHarness = Get-Content -LiteralPath 'Validation/DSA_StressStationHarness.mq5' -Raw
+          if ($adaptiveEngine -notmatch 'DSAStressDiagnosticSnapshot' -or
+              $adaptiveEngine -notmatch 'DSA_ComputeStressDiagnosticsSlice' -or
+              $indicatorHeader -notmatch 'DSA_ProcessStressDiagnostics' -or
+              $stationManifest -notmatch 'required_state' -or
+              $stationManifest -notmatch 'mutation_permission' -or
+              $stationManifest -notmatch 'validation_tag' -or
+              $stationManifest -notmatch 'cost_class' -or
+              $stationManifest -notmatch 'DSA_ValidateStationManifest' -or
+              $stressStationHarness -notmatch 'StationManifestOk' -or
+              $stressStationHarness -notmatch 'StressDiagnosticsOk' -or
+              $stressStationHarness -notmatch 'StressRecalibrationOk' -or
+              $stressStationHarness -notmatch 'BoundedSliceOk') {
+            throw 'Expected stress diagnostics and station traceability proof support.'
+          }
+
           $mtfContract = Get-Content -LiteralPath 'Data/MTFAlignment.mqh' -Raw
           if ($mtfContract -notmatch 'DSA_GetPrimaryAnalysisSnapshot' -or
               $mtfContract -notmatch 'DSA_ShouldRunMediumPath' -or
@@ -247,8 +266,8 @@ jobs:
           }
 
           $compileLogs = Get-ChildItem -File -Filter 'compile-evidence-*.log'
-          if ($compileLogs.Count -lt 14) {
-            throw "Expected at least 14 retained compile evidence logs, found $($compileLogs.Count)"
+          if ($compileLogs.Count -lt 15) {
+            throw "Expected at least 15 retained compile evidence logs, found $($compileLogs.Count)"
           }
 
           foreach ($log in $compileLogs) {

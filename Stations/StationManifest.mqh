@@ -1,6 +1,13 @@
 #ifndef DSA_STATION_MANIFEST_MQH
 #define DSA_STATION_MANIFEST_MQH
 
+enum ENUM_DSA_STATION_COST_CLASS
+{
+   DSA_STATION_COST_LIGHT = 0,
+   DSA_STATION_COST_MEDIUM = 1,
+   DSA_STATION_COST_HEAVY = 2
+};
+
 struct DSAStationDefinition
 {
    int id;
@@ -8,6 +15,13 @@ struct DSAStationDefinition
    string input_role;
    string algorithm;
    string output;
+   string required_state;
+   string validity;
+   string error_state;
+   string mutation_permission;
+   string dependencies;
+   string validation_tag;
+   int cost_class;
    int runtime_priority;
    bool can_run_on_live_candle0;
    bool can_commit_historical_state;
@@ -16,6 +30,62 @@ struct DSAStationDefinition
    bool can_be_deferred;
    bool can_be_sliced;
 };
+
+string DSA_StationRequiredState(const bool live,const bool historical,const bool closed_bar)
+{
+   if(closed_bar)
+      return "ClosedState";
+   if(live && historical)
+      return "ClosedState/LiveState";
+   if(live)
+      return "LiveState";
+   if(historical)
+      return "HistoricalState";
+   return "NoMutationState";
+}
+
+string DSA_StationMutationPermission(const bool live,const bool historical,const bool closed_bar)
+{
+   if(historical && live && !closed_bar)
+      return "live-preview historical-commit";
+   if(historical && closed_bar)
+      return "closed-bar historical-commit";
+   if(historical)
+      return "historical-commit";
+   if(live)
+      return "live-preview only";
+   return "candidate-output only";
+}
+
+string DSA_StationValidationTag(const int id)
+{
+   if(id <= 6)
+      return "contract_state";
+   if(id <= 10)
+      return "data_quality";
+   if(id <= 20)
+      return "feature_context";
+   if(id <= 30)
+      return "model_family";
+   if(id <= 36)
+      return "validation_metrics";
+   if(id <= 41)
+      return "adaptive_runtime";
+   if(id <= 45)
+      return "event_commit";
+   if(id <= 48)
+      return "visual_output";
+   return "scheduler_commit";
+}
+
+int DSA_StationCostClass(const bool heavy,const bool deferred)
+{
+   if(heavy)
+      return DSA_STATION_COST_HEAVY;
+   if(deferred)
+      return DSA_STATION_COST_MEDIUM;
+   return DSA_STATION_COST_LIGHT;
+}
 
 void DSA_SetStation(DSAStationDefinition &station,
                     const int id,
@@ -36,6 +106,13 @@ void DSA_SetStation(DSAStationDefinition &station,
    station.input_role = input_role;
    station.algorithm = algorithm;
    station.output = output;
+   station.required_state = DSA_StationRequiredState(live,historical,closed_bar);
+   station.validity = "finite causal inputs";
+   station.error_state = "empty output and no state commit";
+   station.mutation_permission = DSA_StationMutationPermission(live,historical,closed_bar);
+   station.dependencies = input_role + " / " + algorithm;
+   station.validation_tag = DSA_StationValidationTag(id);
+   station.cost_class = DSA_StationCostClass(heavy,deferred);
    station.runtime_priority = runtime_priority;
    station.can_run_on_live_candle0 = live;
    station.can_commit_historical_state = historical;
@@ -102,6 +179,67 @@ bool DSA_GetStationDefinition(const int id,DSAStationDefinition &station)
       default:
          return false;
    }
+}
+
+bool DSA_ValidateStationDefinition(DSAStationDefinition &station)
+{
+   if(station.id < 1 || station.id > 50)
+      return false;
+   if(StringLen(station.module) <= 0 ||
+      StringLen(station.input_role) <= 0 ||
+      StringLen(station.algorithm) <= 0 ||
+      StringLen(station.output) <= 0 ||
+      StringLen(station.required_state) <= 0 ||
+      StringLen(station.validity) <= 0 ||
+      StringLen(station.error_state) <= 0 ||
+      StringLen(station.mutation_permission) <= 0 ||
+      StringLen(station.dependencies) <= 0 ||
+      StringLen(station.validation_tag) <= 0)
+      return false;
+   if(station.runtime_priority < 0 || station.runtime_priority > 8)
+      return false;
+   if(station.cost_class < DSA_STATION_COST_LIGHT || station.cost_class > DSA_STATION_COST_HEAVY)
+      return false;
+   if(station.heavy_task && (!station.can_be_deferred || !station.can_be_sliced))
+      return false;
+   if(station.heavy_task && station.can_run_on_live_candle0)
+      return false;
+   if(station.requires_closed_bar && station.can_run_on_live_candle0)
+      return false;
+   if(!station.can_commit_historical_state && station.requires_closed_bar && !station.can_be_deferred)
+      return false;
+   return true;
+}
+
+bool DSA_ValidateStationManifest(int &station_count,
+                                 int &heavy_count,
+                                 int &sliced_count,
+                                 int &priority_violations)
+{
+   station_count = 0;
+   heavy_count = 0;
+   sliced_count = 0;
+   priority_violations = 0;
+
+   for(int id = 1; id <= 50; ++id)
+   {
+      DSAStationDefinition station;
+      if(!DSA_GetStationDefinition(id,station))
+         return false;
+
+      ++station_count;
+      if(station.heavy_task)
+         ++heavy_count;
+      if(station.can_be_sliced)
+         ++sliced_count;
+      if(station.runtime_priority < 0 || station.runtime_priority > 8)
+         ++priority_violations;
+
+      if(!DSA_ValidateStationDefinition(station))
+         return false;
+   }
+
+   return (station_count == 50 && heavy_count > 0 && sliced_count > 0 && priority_violations == 0);
 }
 
 #endif

@@ -14,6 +14,7 @@ Desktop.ini
 # Repetitive local compiler logs
 compile-*.log
 !compile-evidence-20260813-193640-*.log
+!compile-evidence-20260813-204752-*.log
 
 # MetaTrader tester/runtime local output
 Tester/

@@ -147,6 +147,7 @@ DSARuntimeSchedulerState RuntimeState;
 DSAInputContract InputContract;
 DSAAdaptiveTuningState AdaptiveTuning;
 DSAAdaptiveJobState AdaptiveJob;
+DSAStressDiagnosticSnapshot StressDiagnostics;
 DSAClosedState ClosedState;
 DSALiveState LiveState;
 bool DSA_RetainedOutputAvailable = false;
@@ -156,6 +157,7 @@ string DSA_CandidateInputFingerprint = "";
 string DSA_CandidateHistoryFingerprint = "";
 int DSA_CandidateBuildTotal = 0;
 long DSA_CandidateStateVersion = 0;
+int DSA_StressDiagnosticCursor = -1;
 
 void DSA_SetPlotDefaults()
 {
@@ -276,6 +278,8 @@ void DSA_ResetBuffers()
    DSA_CandidateHistoryFingerprint = "";
    DSA_CandidateBuildTotal = 0;
    DSA_CandidateStateVersion = 0;
+   DSA_StressDiagnosticCursor = -1;
+   DSA_InitStressDiagnostics(StressDiagnostics);
    DSA_ResetClosedState(ClosedState);
    DSA_ResetLiveState(LiveState);
 }
@@ -878,6 +882,39 @@ bool DSA_AuditHistoricalRevisionSlice(const int rates_total,
    return false;
 }
 
+void DSA_ProcessStressDiagnostics(const int rates_total)
+{
+   if(!RuntimeState.build_complete || RuntimeState.rebuild_pending || rates_total < 16)
+      return;
+
+   int budget = DSA_WorkBudgetBars(RuntimeState,rates_total) / 24;
+   if(budget < 4)
+      budget = 4;
+   if(budget > 64)
+      budget = 64;
+
+   int next_cursor = DSA_StressDiagnosticCursor;
+   DSA_ComputeStressDiagnosticsSlice(rates_total,
+                                     DSA_StressDiagnosticCursor,
+                                     budget,
+                                     RuntimeState.runtime_load,
+                                     CalcStressScore,
+                                     CalcSafeModeScore,
+                                     CalcModelScore,
+                                     CalcDisagreement,
+                                     StressDiagnostics,
+                                     next_cursor);
+   DSA_StressDiagnosticCursor = next_cursor;
+
+   if(StressDiagnostics.request_recalibration &&
+      !AdaptiveJob.active &&
+      !RuntimeState.recalibration_pending)
+   {
+      DSA_CoalesceTrigger(RuntimeState,StressDiagnostics.reason_mask);
+      DSA_StartAdaptiveJob(AdaptiveJob,RuntimeState,StressDiagnostics.reason_mask);
+   }
+}
+
 void DSA_ProcessLivePath(const int rates_total,
                          const datetime &time[],
                          const double &open[],
@@ -923,8 +960,10 @@ int OnInit()
    DSA_RuntimeInit(RuntimeState);
    DSA_InitAdaptiveTuning(AdaptiveTuning);
    DSA_InitAdaptiveJob(AdaptiveJob);
+   DSA_InitStressDiagnostics(StressDiagnostics);
    DSA_ResetClosedState(ClosedState);
    DSA_ResetLiveState(LiveState);
+   DSA_StressDiagnosticCursor = -1;
    DSA_DeleteChartObjectsByPrefix(DSA_OBJECT_PREFIX);
    return INIT_SUCCEEDED;
 }
@@ -998,6 +1037,8 @@ int OnCalculate(const int rates_total,
       DSA_ProcessAdaptiveJobSlice(AdaptiveJob,AdaptiveTuning,RuntimeState,rates_total,
                                   CalcAbsoluteError,CalcConformalRadius,
                                   CalcModelScore,CalcDisagreement,CalcStressScore);
+   if(!revision_detected)
+      DSA_ProcessStressDiagnostics(rates_total);
 
    RuntimeState.last_bar_time = time[0];
    if(current_analysis_bar_time != 0)
