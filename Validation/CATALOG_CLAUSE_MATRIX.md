@@ -5,7 +5,7 @@
 - Catalog: `Catalog/DSA_MQL5_EN.docx`, freshly extracted from OOXML.
 - Scientific reference: `Catalog/DataSience-en.docx`, treated as upstream objective, not a literal heavyweight implementation mandate.
 - Owner decision: Deep Learning and Hybrid are no longer permanent specification gaps. They must be implemented as lightweight, causal, MQL5-native multi-scale sequence behavior without conventional online neural training.
-- Current stage: independent Selection Data channels, Fast Path priority guard, Analysis Timeframe primary target path, New Analysis Bar commit sequencing, and retained-output candidate rebuild implemented and validated.
+- Current stage: independent Selection Data channels, Fast Path priority guard, Analysis Timeframe primary target path, New Analysis Bar commit sequencing, retained-output candidate rebuild, feature/regime scoring, and lightweight native sequence expert implemented and validated.
 
 ## DataScience Crosswalk
 
@@ -14,11 +14,11 @@
 | Data ingestion | MT5 market data, OHLCV/spread, selected symbol/timeframe | PARTIAL | Analysis Timeframe can now feed the primary target path; full analysis-bar state lifecycle remains pending. |
 | Quality assessment | data quality score, gap/time penalties, anomaly inputs | PARTIAL | `DSA_DataQualityScore`; broader cleaning dimensions remain incomplete. |
 | Pattern discovery | trend, volatility, ACF/PACF, cycle, structure, regime | PASS | Feature-regime harness covers volatility context, CUSUM pressure, structure, and regime validity. |
-| Feature engineering | causal feature snapshot and selected channel contract | PARTIAL | Selection Data and feature context are covered; sequence family features remain pending. |
+| Feature engineering | causal feature snapshot, selected channel contract, and sequence signatures | PARTIAL | Selection Data, feature context, and sequence expert inputs are covered; broader cleaning/adaptive weighting remains incomplete. |
 | Statistical models | Naive/Drift, Holt, Kalman, conformal | PARTIAL | Present but some state/uncertainty details remain simplified. |
 | Machine Learning | Adaptive AR-Ridge plus feature engine | PARTIAL | Bounded Ridge exists; adaptive feature/lag/time weighting needs expansion. |
-| Deep Learning objective | lightweight native Multi-Scale Sequence Expert | MISSING | Owner-resolved design direction exists; implementation pending. |
-| Ensemble and scenarios | adaptive ensemble, Hybrid, future objects | PARTIAL | Classical ensemble exists; true Hybrid sequence contribution pending. |
+| Deep Learning objective | lightweight native Multi-Scale Sequence Expert | PASS | `DSA_SequenceExpertForecast`, `DSA_SequenceExpertHarness`, `deep_mode=true`. |
+| Ensemble and scenarios | adaptive ensemble, Hybrid, future objects | PARTIAL | Hybrid sequence contribution exists; broader scenario semantics and shock-aware future tests remain incomplete. |
 | Uncertainty | conformal bands and future uncertainty geometry | PARTIAL | Regime-conditioned conformal exists; calibration metrics need stronger evidence. |
 | Backtesting and validation | prequential walk-forward plus Strategy Tester harnesses | PASS | Rolling MAE/RMSE, directional accuracy, coverage rate, and harness suite are present. |
 | Monitoring/retraining | drift, safe mode, evidence-driven recalibration | PARTIAL | Trigger/coalescing and sliced adaptation exist; approval/state commit incomplete. |
@@ -43,17 +43,17 @@
 | 13 | ClosedState and LiveState | PASS | `Core/StateRegistry.mqh`, `DSA_StateIsolationHarness`, live state starts from valid closed state and is replaced each tick | Keep state isolation invariant. |
 | 14 | Full History Range | EXACT PASS | adversarial `deep_bars=8437` | Keep full source coverage. |
 | 15 | Progressive Historical Build | PASS | sliced historical build with retained-output candidate buffers and history-revision harness stale-candidate rejection | Broaden single-flight stress proof. |
-| 16 | Model Maturity | PARTIAL | maturity-based weights | Add sequence maturity and residual maturity gates. |
+| 16 | Model Maturity | PASS | feature maturity plus sequence confidence/maturity gates validated by `DSA_SequenceExpertHarness` | Broaden dataset coverage. |
 | 17 | Adaptive Historical Weight | PARTIAL | Ridge time decay | Broaden evidence-based time weighting. |
 | 18 | Fixed Market Parameters | PARTIAL | some adaptive scales | Classify and adapt market-behavior constants. |
-| 19 | Model Bank | PARTIAL | classical models present | Add sequence expert and stronger state contracts. |
+| 19 | Model Bank | PASS | Naive/Drift, Holt, Kalman, AR-Ridge, sequence expert, ensemble, conformal, drift, and Safe Mode all present | Broaden calibration evidence. |
 | 20 | Naive / Drift | EXACT PASS | `model.naive`, `model.drift` | Keep causal. |
 | 21 | Adaptive Holt | PARTIAL | adaptive alpha/beta | Validate OOS-driven smoothing behavior. |
 | 22 | Kalman Local Linear Trend | PARTIAL | level/slope/innovation approximation | Expose uncertainty/residual state more completely. |
 | 23 | Adaptive AR-Ridge | PARTIAL | bounded 5D Ridge | Add adaptive lag/feature/time weight evidence. |
 | 24 | Adaptive Volatility Engine | PASS | EW plus channel/range, MAD, Parkinson-style range, and vol-of-vol evidence | Broaden market dataset coverage. |
 | 25 | Regime Engine | PASS | six regimes with CUSUM pressure, residual/disagreement, structure, vol-of-vol, and volume-shock evidence | Broaden market dataset coverage. |
-| 26 | Model Mode | PARTIAL | all six attach | Deep/Hybrid semantics incomplete. |
+| 26 | Model Mode | PASS | all six attach; Deep prioritizes sequence and Hybrid blends Statistical/Ridge/sequence | Keep mode contracts covered. |
 | 27 | Feature Engine | PARTIAL | many causal features | Complete required families and tests. |
 | 28 | Multi-Timeframe Leakage Guard | EXACT PASS | MTF causality harness and primary Analysis Timeframe harness | Keep closed higher-TF candles causal. |
 | 29 | Main Formula Catalog | PARTIAL | formulas exist in modules | Complete missing formulas and traceability. |
@@ -65,7 +65,7 @@
 | 35 | Phase 3 | PASS | feature-regime harness covers causal channel, volatility, structure, and validation context | Keep sequence-specific features under Phase 6. |
 | 36 | Phase 4 | PARTIAL | ACF/PACF/cycle/structure | reliability and reranking incomplete. |
 | 37 | Phase 5 | PASS | volatility ensemble and regime context now covered by `DSA_FeatureRegimeHarness` | Broaden market dataset coverage. |
-| 38 | Phase 6 | PARTIAL | model bank | sequence expert and adaptive weights incomplete. |
+| 38 | Phase 6 | PASS | model bank includes classical, Ridge, sequence, Hybrid, conformal, drift, and Safe Mode behavior | Broaden adaptive weight calibration datasets. |
 | 39 | Phase 7 | PARTIAL | forecast objects | scenario semantics need stronger proof. |
 | 40 | Phase 8 | PARTIAL | OOS/conformal basics | metrics and approval incomplete. |
 | 41 | Phase 9 | PARTIAL | event engine basics | event taxonomy/finality proof incomplete. |
@@ -88,7 +88,7 @@
 | 58 | Forecast Rectangle | EXACT PASS | chart-object semantic harness | Keep invariant. |
 | 59 | Adaptive Band | PASS | bands use volatility, conformal radius, vol-of-vol, and volume-shock scaling | Broaden coverage datasets. |
 | 60 | Prequential Walk-Forward | PARTIAL | previous forecast error | Add stored multi-metric OOS evidence. |
-| 61 | Model Disagreement | PARTIAL | disagreement score | Include sequence/ridge/stat family disagreement. |
+| 61 | Model Disagreement | PASS | disagreement includes statistical/Ridge spread plus sequence-family spread when active | Broaden OOS calibration datasets. |
 | 62 | Regime-Conditioned Conformal | PARTIAL | regime residual selection | Strengthen coverage evidence. |
 | 63 | Metrics | PASS | absolute error, squared error, rolling MAE/RMSE, directional accuracy, and coverage rate | Broaden reporting outputs. |
 | 64 | Model Score | PASS | error, disagreement, quality, rolling validation, volatility stress, and runtime-cost penalty | Broaden OOS calibration datasets. |
@@ -121,6 +121,6 @@
 
 ## Current Highest-Risk Work Queue
 
-1. Lightweight Multi-Scale Sequence Expert and true Hybrid ensemble.
-2. Stress diagnostics and station traceability.
-3. Event taxonomy, visual vocabulary, and broader calibration datasets.
+1. Stress diagnostics and station traceability.
+2. Event taxonomy, visual vocabulary, and broader calibration datasets.
+3. Adaptive approval/rejection lifecycle and broader trigger tests.

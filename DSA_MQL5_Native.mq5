@@ -566,7 +566,7 @@ void DSA_ProcessBarInto(const int index,
    DSA_ComputeModels(index,rates_total,InputContract,feature,open,high,low,close,
                       target_buffer,trend_buffer,signal_buffer,
                       forecast_buffer,forecast_h2_buffer,forecast_h4_buffer,forecast_h8_buffer,
-                      volatility_buffer,uncertainty_upper_buffer,uncertainty_lower_buffer,
+                      volatility_buffer,quality_buffer,uncertainty_upper_buffer,uncertainty_lower_buffer,
                       absolute_error_buffer,regime_buffer,ridge_state_buffer,
                       AdaptiveTuning.ridge_lambda_scale,AdaptiveTuning.interval_scale,
                       RuntimeState.runtime_load,live_bar,model);

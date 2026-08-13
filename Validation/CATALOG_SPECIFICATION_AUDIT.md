@@ -55,16 +55,16 @@
 | Feature / volatility / regime scoring | PASS | MAD, Parkinson-style range, vol-of-vol, CUSUM pressure, volume shock, structure context, runtime-cost score, and feature-regime harness |
 | Future object semantics | PASS | semantic chart harness validates types, anchors, bounds, scenarios |
 | All official Model Mode values attach | PASS | `DSA_ModelModeHarness`, all six modes true |
-| Deep Learning implementation | MISSING | owner-resolved lightweight Multi-Scale Sequence Expert not yet implemented |
-| Hybrid Multi-Scale component | PARTIAL | Statistical + Ridge subset remains; sequence family contribution still missing |
+| Deep Learning implementation | PASS | lightweight native sequence expert with confidence/maturity, `DSA_SequenceExpertHarness`, `deep_mode=true` |
+| Hybrid Multi-Scale component | PASS | Statistical + Ridge + sequence family blend, `DSA_SequenceExpertHarness`, `hybrid_blend=true` |
 | Arbitrary unsampled history revision detection | PASS | `CalcBarFingerprint`, `DSA_BarRevisionFingerprint`, `DSA_FingerprintBufferMatchesCurrent`, bounded `DSA_AuditHistoricalRevisionSlice` sweep, and history-revision harness |
 | Predictive accuracy / profitability | NOT APPLICABLE | explicitly outside scope |
 
 ## Fresh Evidence
 
-- Final compile: `compile-evidence-20260813-183403-final.log`, `0 errors, 0 warnings`.
-- Harness compiles: `compile-evidence-20260813-183403-*-harness.log`, all `0 errors, 0 warnings`.
-- Latest Strategy Tester run window: `2026-08-13 18:34-18:42` in `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`.
+- Final compile: `compile-evidence-20260813-193640-DSA_MQL5_Native.log`, `0 errors, 0 warnings`.
+- Harness compiles: `compile-evidence-20260813-193640-*.log`, all `0 errors, 0 warnings`.
+- Latest Strategy Tester run window: `2026-08-13 19:38-19:51` in `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`.
 - Selection Data runtime: `OnTester result 1`, `failures=0`, independent O/H/L/C, H/L, and O/C contract validated.
 - Adversarial full-history and anti-repaint runtime: `OnTester result 1`, `failures=0`, `deep_bars=8437`.
 - MTF causality runtime: `OnTester result 1`, `failures=0`, `samples=234`.
@@ -73,6 +73,7 @@
 - Display-state runtime: `OnTester result 1`, `failures=0`, `hidden_history=true`, `forecast_hidden=true`, `events_hidden=true`.
 - History-revision runtime: `OnTester result 1`, `failures=0`, `checks=7`, `history_fingerprint_changed=true`, `stale_candidate_rejected=true`, `unsampled_candidate_rejected=true`.
 - Feature-regime runtime: `OnTester result 1`, `failures=0`, `checks=5`, `runtime_score=true`, `rolling_metrics=true`, `adaptive_stress=true`.
+- Sequence expert runtime: `OnTester result 1`, `failures=0`, `checks=4`, `sequence_forecast=true`, `deep_mode=true`, `hybrid_blend=true`, `safe_suppresses_sequence=true`.
 - Future object semantic runtime: `OnTester result 1`, `failures=0`, `count=121`.
 - Model mode runtime: `OnTester result 1`, all six official modes true.
 

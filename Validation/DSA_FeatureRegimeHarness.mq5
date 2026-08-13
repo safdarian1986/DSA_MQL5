@@ -197,14 +197,14 @@ void DSA_RunFeatureRegimeHarness()
    DSA_ComputeModels(0,ArraySize(time),contract,feature,open_values,high_values,low_values,close_values,
                      target_buffer,trend_buffer,trend_buffer,forecast_buffer,
                      forecast_h2_buffer,forecast_h4_buffer,forecast_h8_buffer,
-                     volatility_buffer,upper_buffer,lower_buffer,absolute_error_buffer,
+                     volatility_buffer,quality_buffer,upper_buffer,lower_buffer,absolute_error_buffer,
                      regime_buffer,ridge_state_buffer,1.0,1.0,0.05,true,calm_model);
 
    DSAModelSnapshot loaded_model;
    DSA_ComputeModels(0,ArraySize(time),contract,feature,open_values,high_values,low_values,close_values,
                      target_buffer,trend_buffer,trend_buffer,forecast_buffer,
                      forecast_h2_buffer,forecast_h4_buffer,forecast_h8_buffer,
-                     volatility_buffer,upper_buffer,lower_buffer,absolute_error_buffer,
+                     volatility_buffer,quality_buffer,upper_buffer,lower_buffer,absolute_error_buffer,
                      regime_buffer,ridge_state_buffer,1.0,1.0,1.35,true,loaded_model);
 
    RegimeContextOk = (calm_model.regime >= DSA_REGIME_TREND_UP &&

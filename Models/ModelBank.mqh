@@ -14,6 +14,9 @@ struct DSAModelSnapshot
    double kalman_slope;
    double kalman_forecast;
    double ridge_forecast;
+   double sequence_forecast;
+   double sequence_confidence;
+   double sequence_maturity;
    double central_forecast;
    double ensemble_state;
    double disagreement;
@@ -27,6 +30,128 @@ struct DSAModelSnapshot
    int regime;
    bool safe_mode;
 };
+
+double DSA_SequenceScaleReturn(const int index,
+                               const int scale,
+                               DSAFeatureSnapshot &feature,
+                               const double &target_buffer[])
+{
+   if(scale <= 0)
+      return 0.0;
+   if(index == 0)
+   {
+      if(ArraySize(target_buffer) > scale && DSA_HasValue(target_buffer[scale]))
+         return feature.target - target_buffer[scale];
+      return 0.0;
+   }
+
+   double anchor = feature.target;
+   if(index < ArraySize(target_buffer) && DSA_HasValue(target_buffer[index]))
+      anchor = target_buffer[index];
+   if(index + scale < ArraySize(target_buffer) &&
+      DSA_HasValue(target_buffer[index + scale]))
+      return anchor - target_buffer[index + scale];
+   return 0.0;
+}
+
+double DSA_SequenceOriginReturn(const int origin,
+                                const int scale,
+                                const double &target_buffer[])
+{
+   if(scale <= 0)
+      return 0.0;
+   if(origin + scale < ArraySize(target_buffer) &&
+      DSA_HasValue(target_buffer[origin]) &&
+      DSA_HasValue(target_buffer[origin + scale]))
+      return target_buffer[origin] - target_buffer[origin + scale];
+   return 0.0;
+}
+
+double DSA_SequenceExpertForecast(const int index,
+                                  const int rates_total,
+                                  DSAFeatureSnapshot &feature,
+                                  const double &target_buffer[],
+                                  const double &volatility_buffer[],
+                                  const double &quality_buffer[],
+                                  const bool fast_path,
+                                  double &confidence,
+                                  double &maturity)
+{
+   confidence = 0.0;
+   maturity = 0.0;
+
+   if(index + 18 >= rates_total)
+      return feature.target + feature.slope;
+
+   const int scales[5] = {1,2,4,8,16};
+   double current_signature[5];
+   for(int i = 0; i < 5; ++i)
+      current_signature[i] = DSA_SequenceScaleReturn(index,scales[i],feature,target_buffer);
+
+   const int available = rates_total - index - 18;
+   const int max_samples = (fast_path ? 80 : 240);
+   const int stride = MathMax(1,(int)MathCeil((double)available / (double)max_samples));
+   double weighted_delta_sum = 0.0;
+   double weight_sum = 0.0;
+   double best_similarity = 0.0;
+   int matches = 0;
+
+   for(int origin = index + 2; origin + 17 < rates_total; origin += stride)
+   {
+      if(!DSA_HasValue(target_buffer[origin - 1]) || !DSA_HasValue(target_buffer[origin]))
+         continue;
+
+      double distance = 0.0;
+      double scale_weight_sum = 0.0;
+      for(int i = 0; i < 5; ++i)
+      {
+         const double origin_return = DSA_SequenceOriginReturn(origin,scales[i],target_buffer);
+         const double scale_weight = 1.0 / (double)scales[i];
+         distance += scale_weight * MathAbs(current_signature[i] - origin_return);
+         scale_weight_sum += scale_weight;
+      }
+
+      const double local_volatility = (DSA_HasValue(volatility_buffer[origin]) ? volatility_buffer[origin] : feature.volatility);
+      const double normalized_distance = DSA_SafeDiv(distance,MathMax(scale_weight_sum * MathMax(local_volatility,feature.volatility),_Point),4.0);
+      const double similarity = MathExp(-DSA_Clamp(normalized_distance,0.0,8.0));
+      if(similarity < 0.025)
+         continue;
+
+      const double quality = (DSA_HasValue(quality_buffer[origin]) ? DSA_Clamp(quality_buffer[origin] / 100.0,0.20,1.0) : 0.65);
+      const double age_decay = MathExp(-0.0015 * (double)(origin - index));
+      const double weight = similarity * quality * age_decay;
+      const double next_delta = target_buffer[origin - 1] - target_buffer[origin];
+      weighted_delta_sum += weight * next_delta;
+      weight_sum += weight;
+      best_similarity = MathMax(best_similarity,similarity);
+      ++matches;
+   }
+
+   const double scale_volatility = MathMax(feature.volatility,_Point);
+   double momentum_delta = 0.0;
+   double momentum_weight_sum = 0.0;
+   for(int i = 0; i < 5; ++i)
+   {
+      const double scale_weight = 1.0 / MathSqrt((double)scales[i]);
+      momentum_delta += scale_weight * DSA_Clamp(current_signature[i] / (double)scales[i],
+                                                -2.0 * scale_volatility,
+                                                2.0 * scale_volatility);
+      momentum_weight_sum += scale_weight;
+   }
+   if(momentum_weight_sum > DBL_EPSILON)
+      momentum_delta /= momentum_weight_sum;
+
+   maturity = DSA_Clamp((double)matches / 48.0,0.0,1.0);
+   confidence = DSA_Clamp(0.55 * maturity +
+                          0.30 * best_similarity +
+                          0.15 * DSA_Clamp(feature.quality_score / 100.0,0.0,1.0),
+                          0.0,1.0);
+
+   const double matched_delta = (weight_sum > DBL_EPSILON ? weighted_delta_sum / weight_sum : feature.slope);
+   const double blended_delta = confidence * matched_delta + (1.0 - confidence) * (0.60 * feature.slope + 0.40 * momentum_delta);
+   const double guard = MathMax(scale_volatility * (2.5 + 2.0 * confidence),8.0 * _Point);
+   return DSA_Clamp(feature.target + blended_delta,feature.target - guard,feature.target + guard);
+}
 
 int DSA_ClassifyRegime(DSAFeatureSnapshot &feature,const double disagreement,const double drift_score)
 {
@@ -368,6 +493,7 @@ void DSA_ComputeModels(const int index,
                        const double &forecast_h4_buffer[],
                        const double &forecast_h8_buffer[],
                        const double &volatility_buffer[],
+                       const double &quality_buffer[],
                        const double &uncertainty_upper_buffer[],
                        const double &uncertainty_lower_buffer[],
                         const double &absolute_error_buffer[],
@@ -413,10 +539,26 @@ void DSA_ComputeModels(const int index,
    else
       model.ridge_forecast = DSA_RidgeForecast(index,rates_total,feature,contract,open,high,low,close,target_buffer,ridge_lambda_scale);
 
+   const bool sequence_mode = (contract.model_mode == DSA_MODEL_DEEP_LEARNING ||
+                               contract.model_mode == DSA_MODEL_HYBRID);
+   if(sequence_mode)
+      model.sequence_forecast = DSA_SequenceExpertForecast(index,rates_total,feature,
+                                                           target_buffer,volatility_buffer,quality_buffer,
+                                                           fast_path,
+                                                           model.sequence_confidence,
+                                                           model.sequence_maturity);
+   else
+   {
+      model.sequence_forecast = feature.target + feature.slope;
+      model.sequence_confidence = 0.0;
+      model.sequence_maturity = 0.0;
+   }
+
    double w_naive = 0.15;
    double w_holt = 0.25;
    double w_kalman = 0.35;
    double w_ridge = 0.25;
+   double w_sequence = 0.12 * model.sequence_confidence;
 
    if(feature.maturity < 12)
    {
@@ -424,6 +566,7 @@ void DSA_ComputeModels(const int index,
       w_holt = 0.20;
       w_kalman = 0.15;
       w_ridge = 0.00;
+      w_sequence = 0.00;
    }
    else if(feature.maturity < 40)
    {
@@ -431,6 +574,7 @@ void DSA_ComputeModels(const int index,
       w_holt = 0.35;
       w_kalman = 0.35;
       w_ridge = 0.05;
+      w_sequence = 0.05 * model.sequence_confidence;
    }
 
    if(contract.model_mode == DSA_MODEL_STATISTICAL)
@@ -439,6 +583,7 @@ void DSA_ComputeModels(const int index,
       w_holt = 0.35;
       w_kalman = 0.45;
       w_ridge = 0.00;
+      w_sequence = 0.00;
    }
    else if(contract.model_mode == DSA_MODEL_MACHINE_LEARNING)
    {
@@ -446,20 +591,23 @@ void DSA_ComputeModels(const int index,
       w_holt = 0.10;
       w_kalman = 0.20;
       w_ridge = 0.60;
+      w_sequence = 0.00;
    }
    else if(contract.model_mode == DSA_MODEL_HYBRID)
    {
-      w_naive = 0.12;
-      w_holt = 0.28;
-      w_kalman = 0.35;
+      w_naive = 0.10;
+      w_holt = 0.22;
+      w_kalman = 0.28;
       w_ridge = 0.25;
+      w_sequence = 0.15 + 0.20 * model.sequence_confidence;
    }
    else if(contract.model_mode == DSA_MODEL_DEEP_LEARNING)
    {
-      w_naive = 0.45;
-      w_holt = 0.10;
-      w_kalman = 0.45;
+      w_naive = 0.10;
+      w_holt = 0.05;
+      w_kalman = 0.15;
       w_ridge = 0.00;
+      w_sequence = 0.70 + 0.25 * model.sequence_confidence;
    }
    else if(contract.model_mode == DSA_MODEL_SAFE_MODE)
    {
@@ -467,6 +615,7 @@ void DSA_ComputeModels(const int index,
       w_holt = 0.10;
       w_kalman = 0.45;
       w_ridge = 0.00;
+      w_sequence = 0.00;
    }
 
    const double quality_confidence = DSA_Clamp(feature.quality_score / 100.0,0.0,1.0);
@@ -490,6 +639,7 @@ void DSA_ComputeModels(const int index,
       w_kalman += 0.08 * instability_pressure;
       w_holt = MathMax(w_holt - 0.03 * instability_pressure,0.0);
       w_ridge = MathMax(w_ridge - 0.15 * instability_pressure,0.0);
+      w_sequence = MathMax(w_sequence - 0.12 * instability_pressure,0.0);
    }
 
    if(feature.congestion_score > 0.55)
@@ -505,11 +655,14 @@ void DSA_ComputeModels(const int index,
       const double ridge_boost = 0.08 * maturity_confidence * quality_confidence;
       w_ridge += ridge_boost;
       w_naive = MathMax(w_naive - 0.04 * ridge_boost,0.0);
+      w_sequence += 0.06 * maturity_confidence * model.sequence_confidence;
    }
 
    const double spread_1 = MathAbs(model.naive - model.holt_forecast);
    const double spread_2 = MathAbs(model.kalman_forecast - model.ridge_forecast);
-   model.disagreement = DSA_Clamp((spread_1 + spread_2) / MathMax(4.0 * feature.volatility,_Point),0.0,1.0);
+   const double spread_3 = MathAbs(model.sequence_forecast - 0.5 * (model.kalman_forecast + model.holt_forecast));
+   model.disagreement = DSA_Clamp((spread_1 + spread_2 + spread_3 * model.sequence_confidence) /
+                                  MathMax((4.0 + model.sequence_confidence) * feature.volatility,_Point),0.0,1.0);
 
    double previous_forecast = EMPTY_VALUE;
    if(index + 1 < rates_total && DSA_HasValue(forecast_buffer[index + 1]))
@@ -550,14 +703,16 @@ void DSA_ComputeModels(const int index,
       w_holt = 0.05;
       w_kalman = 0.50;
       w_ridge = 0.00;
+      w_sequence = 0.00;
       model.interval_radius *= 1.35;
    }
 
-   const double weight_sum = MathMax(w_naive + w_holt + w_kalman + w_ridge,DBL_EPSILON);
+   const double weight_sum = MathMax(w_naive + w_holt + w_kalman + w_ridge + w_sequence,DBL_EPSILON);
    model.central_forecast = (w_naive * model.naive +
                              w_holt * model.holt_forecast +
                              w_kalman * model.kalman_forecast +
-                             w_ridge * model.ridge_forecast) / weight_sum;
+                             w_ridge * model.ridge_forecast +
+                             w_sequence * model.sequence_forecast) / weight_sum;
 
    model.ensemble_state = model.kalman_level;
    model.band_radius = MathMax(feature.volatility,model.interval_radius * 0.70);

@@ -54,6 +54,7 @@ jobs:
             'Validation/DSA_DisplayStateHarness.mq5',
             'Validation/DSA_HistoryRevisionHarness.mq5',
             'Validation/DSA_FeatureRegimeHarness.mq5',
+            'Validation/DSA_SequenceExpertHarness.mq5',
             'Validation/DSA_RuntimeHarness.mq5',
             'Validation/DSA_DeepLearningHarness.mq5',
             'Validation/RuntimeTesterAdversarial.ini',
@@ -66,6 +67,7 @@ jobs:
             'Validation/RuntimeTesterDisplay.ini',
             'Validation/RuntimeTesterHistoryRevision.ini',
             'Validation/RuntimeTesterFeatureRegime.ini',
+            'Validation/RuntimeTesterSequence.ini',
             'Validation/RuntimeTester.ini',
             'Validation/RuntimeTesterDeep.ini'
           )
@@ -149,6 +151,21 @@ jobs:
             throw 'Expected feature, volatility, regime, runtime-score, and rolling-metric proof support.'
           }
 
+          $sequenceHarness = Get-Content -LiteralPath 'Validation/DSA_SequenceExpertHarness.mq5' -Raw
+          if ($modelBank -notmatch 'DSA_SequenceExpertForecast' -or
+              $modelBank -notmatch 'sequence_confidence' -or
+              $modelBank -notmatch 'sequence_maturity' -or
+              $modelBank -notmatch 'w_sequence' -or
+              $modelBank -notmatch 'sequence_mode' -or
+              $modelBank -notmatch 'DSA_MODEL_DEEP_LEARNING' -or
+              $modelBank -notmatch 'DSA_MODEL_HYBRID' -or
+              $sequenceHarness -notmatch 'SequenceForecastOk' -or
+              $sequenceHarness -notmatch 'DeepModeOk' -or
+              $sequenceHarness -notmatch 'HybridBlendOk' -or
+              $sequenceHarness -notmatch 'SafeModeSuppressesSequenceOk') {
+            throw 'Expected native sequence expert and Deep/Hybrid participation proof support.'
+          }
+
           $mtfContract = Get-Content -LiteralPath 'Data/MTFAlignment.mqh' -Raw
           if ($mtfContract -notmatch 'DSA_GetPrimaryAnalysisSnapshot' -or
               $mtfContract -notmatch 'DSA_ShouldRunMediumPath' -or
@@ -230,8 +247,8 @@ jobs:
           }
 
           $compileLogs = Get-ChildItem -File -Filter 'compile-evidence-*.log'
-          if ($compileLogs.Count -lt 9) {
-            throw "Expected at least 9 retained compile evidence logs, found $($compileLogs.Count)"
+          if ($compileLogs.Count -lt 14) {
+            throw "Expected at least 14 retained compile evidence logs, found $($compileLogs.Count)"
           }
 
           foreach ($log in $compileLogs) {
@@ -250,5 +267,5 @@ jobs:
               $audit -notmatch 'Independent Selection Data channels' -or
               $audit -notmatch 'Fast Path priority' -or
               $audit -notmatch 'Analysis Timeframe primary path') {
-            throw 'Completion audit must preserve the owner-resolved Deep/Hybrid roadmap, Selection Data, Fast Path, and Analysis Timeframe status.'
+            throw 'Completion audit must preserve the native sequence expert, Selection Data, Fast Path, and Analysis Timeframe status.'
           }
