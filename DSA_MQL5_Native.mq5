@@ -522,10 +522,11 @@ int OnCalculate(const int rates_total,
    const bool new_bar = (RuntimeState.last_bar_time != 0 && RuntimeState.last_bar_time != time[0]);
 
    DSA_PrepareBackgroundBuild(rates_total,history_fingerprint);
-   DSA_ProcessLivePath(rates_total,time,open,high,low,close,tick_volume,spread);
 
    if(new_bar && RuntimeState.build_complete && !RuntimeState.rebuild_pending)
       DSA_ProcessBar(1,rates_total,false,time,open,high,low,close,tick_volume,spread);
+
+   DSA_ProcessLivePath(rates_total,time,open,high,low,close,tick_volume,spread);
 
    if(RuntimeState.rebuild_pending || !RuntimeState.build_complete)
       DSA_ProcessHistoricalSlice(rates_total,time,open,high,low,close,tick_volume,spread);

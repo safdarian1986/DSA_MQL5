@@ -119,11 +119,12 @@ jobs:
           }
 
           $prepareIndex = $indicatorHeader.IndexOf('DSA_PrepareBackgroundBuild(rates_total,history_fingerprint);')
+          $closedCommitIndex = $indicatorHeader.IndexOf('DSA_ProcessBar(1,rates_total,false,time,open,high,low,close,tick_volume,spread);')
           $liveIndex = $indicatorHeader.IndexOf('DSA_ProcessLivePath(rates_total,time,open,high,low,close,tick_volume,spread);')
           $sliceIndex = $indicatorHeader.IndexOf('DSA_ProcessHistoricalSlice(rates_total,time,open,high,low,close,tick_volume,spread);')
-          if ($prepareIndex -lt 0 -or $liveIndex -lt 0 -or $sliceIndex -lt 0 -or
-              $prepareIndex -gt $liveIndex -or $liveIndex -gt $sliceIndex) {
-            throw 'Expected OnCalculate to run lightweight build preparation, then P0 live path, then historical background slices.'
+          if ($prepareIndex -lt 0 -or $closedCommitIndex -lt 0 -or $liveIndex -lt 0 -or $sliceIndex -lt 0 -or
+              $prepareIndex -gt $closedCommitIndex -or $closedCommitIndex -gt $liveIndex -or $liveIndex -gt $sliceIndex) {
+            throw 'Expected OnCalculate to run lightweight build preparation, closed-bar commit, P0 live path, then historical background slices.'
           }
 
           if ($indicatorHeader -notmatch 'DSA_RetainedOutputAvailable' -or

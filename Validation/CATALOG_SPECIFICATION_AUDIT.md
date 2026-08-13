@@ -36,7 +36,8 @@
 | Independent Selection Data channels | EXACT PASS | `DSASelectionChannels`, `DSA_BuildSelectionChannels`, `DSA_SelectionDataHarness`, `OnTester result 1` |
 | Full-history progressive build | PASS | `DSA_ProcessHistoricalSlice`, adversarial harness `deep_bars=8437` |
 | Candle 0 live path | PASS | `DSA_ProcessLivePath`, tester every-tick calculation |
-| Fast Path priority | PASS | `OnCalculate` runs lightweight rebuild preparation, P0 live path, then historical/adaptive background work |
+| Closed-bar before live mutation | PASS | new-bar closed bar 1 is processed before Candle0 live path |
+| Fast Path priority | PASS | `OnCalculate` runs lightweight rebuild preparation, closed-bar commit when needed, P0 live path, then historical/adaptive background work |
 | Closed historical anti-repaint | PASS | adversarial harness captured closed bar and compared after future bars |
 | MTF leakage guard | PASS | `Data/MTFAlignment.mqh`, MTF harness `samples=234` |
 | Analysis Timeframe primary path | PASS | `DSA_GetPrimaryAnalysisSnapshot`, `primary_analysis_available`, Analysis Timeframe harness |
@@ -56,9 +57,9 @@
 
 ## Fresh Evidence
 
-- Final compile: `compile-evidence-20260813-161100-final.log`, `0 errors, 0 warnings`.
-- Harness compiles: `compile-evidence-20260813-161100-*-harness.log`, all `0 errors, 0 warnings`.
-- Latest Strategy Tester run window: `2026-08-13 16:12-16:15` in `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`.
+- Final compile: `compile-evidence-20260813-162446-final.log`, `0 errors, 0 warnings`.
+- Harness compiles: `compile-evidence-20260813-162446-*-harness.log`, all `0 errors, 0 warnings`.
+- Latest Strategy Tester run window: `2026-08-13 16:25-16:29` in `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`.
 - Selection Data runtime: `OnTester result 1`, `failures=0`, independent O/H/L/C, H/L, and O/C contract validated.
 - Adversarial full-history and anti-repaint runtime: `OnTester result 1`, `failures=0`, `deep_bars=8437`.
 - MTF causality runtime: `OnTester result 1`, `failures=0`, `samples=234`.

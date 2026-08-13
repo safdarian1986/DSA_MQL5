@@ -5,7 +5,7 @@
 - Catalog: `Catalog/DSA_MQL5_EN.docx`, freshly extracted from OOXML.
 - Scientific reference: `Catalog/DataSience-en.docx`, treated as upstream objective, not a literal heavyweight implementation mandate.
 - Owner decision: Deep Learning and Hybrid are no longer permanent specification gaps. They must be implemented as lightweight, causal, MQL5-native multi-scale sequence behavior without conventional online neural training.
-- Current stage: independent Selection Data channels, Fast Path priority guard, and Analysis Timeframe primary target path implemented and validated.
+- Current stage: independent Selection Data channels, Fast Path priority guard, Analysis Timeframe primary target path, and closed-bar-before-live commit ordering implemented and validated.
 
 ## DataScience Crosswalk
 
@@ -39,8 +39,8 @@
 | 9 | Trigger Coalescing | PARTIAL | reason mask merge | Add stale candidate rejection evidence. |
 | 10 | Selection Data Contract | EXACT PASS | `DSASelectionChannels`, selection harness | Keep independent channels. |
 | 11 | Auxiliary Central Series | EXACT PASS | OHLC average, median, OC midpoint | Keep as auxiliary, not replacement. |
-| 12 | Candle 0 Contract | PARTIAL | live `DSA_ProcessLivePath` | Isolate provisional state from ClosedState. |
-| 13 | ClosedState and LiveState | MISMATCH | current buffers mutate live and closed paths directly | Add minimal closed/live state separation. |
+| 12 | Candle 0 Contract | PARTIAL | live `DSA_ProcessLivePath` after closed-bar commit on new bars | Add dedicated live snapshot/state object. |
+| 13 | ClosedState and LiveState | PARTIAL | closed bar 1 is committed before Candle0 live processing on new bars | Add full state-object separation. |
 | 14 | Full History Range | EXACT PASS | adversarial `deep_bars=8437` | Keep full source coverage. |
 | 15 | Progressive Historical Build | PARTIAL | sliced historical build | Preserve old output during candidate rebuild. |
 | 16 | Model Maturity | PARTIAL | maturity-based weights | Add sequence maturity and residual maturity gates. |
@@ -111,8 +111,8 @@
 | 81 | Internal Output Structure | PARTIAL | buffers and snapshots | Add traceable state/output mapping. |
 | 82 | Code Architecture | PARTIAL | consolidated modules | Add real state components only where behavior needs them. |
 | 83 | Standard Station Contract | PARTIAL | station manifest metadata | Link station fields to execution/tests. |
-| 84 | State Mutation | PARTIAL | buffers mutate in processing | Enforce live/closed mutation permissions. |
-| 85 | Normal Tick Contract | PARTIAL | P0 live path precedes historical/adaptive background work | Complete Closed/Live mutation permissions. |
+| 84 | State Mutation | PARTIAL | closed-bar commit is ordered before live mutation; buffers remain shared | Enforce full live/closed mutation permissions. |
+| 85 | Normal Tick Contract | PARTIAL | P0 live path precedes historical/adaptive background work | Complete dedicated live-state read/write permissions. |
 | 86 | New-Bar Tick Contract | PARTIAL | Analysis Timeframe target path exists; host new-bar still triggers commit | Implement Analysis Bar commit sequence. |
 | 87 | Heavy Trigger Contract | PARTIAL | reason mask and slices | Add candidate job lifecycle. |
 | 88 | History Revision Contract | PARTIAL | revision detection plus retained-output reset guard | Preserve previous output fully until candidate commit. |
@@ -121,8 +121,8 @@
 
 ## Current Highest-Risk Work Queue
 
-1. ClosedState / LiveState isolation.
-2. Previous-output hold and candidate/atomic commit.
-3. New Analysis Bar commit sequence.
+1. Previous-output hold and candidate/atomic commit.
+2. New Analysis Bar commit sequence.
+3. Dedicated ClosedState / LiveState objects.
 4. Full feature, volatility, regime, adaptive weights, latency-aware score.
 5. Lightweight Multi-Scale Sequence Expert and true Hybrid ensemble.
