@@ -13,14 +13,14 @@
 | --- | --- | --- | --- |
 | Data ingestion | MT5 market data, OHLCV/spread, selected symbol/timeframe | PARTIAL | Analysis Timeframe can now feed the primary target path; full analysis-bar state lifecycle remains pending. |
 | Quality assessment | data quality score, gap/time penalties, anomaly inputs | PARTIAL | `DSA_DataQualityScore`; broader cleaning dimensions remain incomplete. |
-| Pattern discovery | trend, volatility, ACF/PACF, cycle, structure, regime | PARTIAL | Implemented in feature/model layers, but several evidence families are simplified. |
-| Feature engineering | causal feature snapshot and selected channel contract | PARTIAL | Selection Data is now exact; full feature family matrix remains incomplete. |
+| Pattern discovery | trend, volatility, ACF/PACF, cycle, structure, regime | PASS | Feature-regime harness covers volatility context, CUSUM pressure, structure, and regime validity. |
+| Feature engineering | causal feature snapshot and selected channel contract | PARTIAL | Selection Data and feature context are covered; sequence family features remain pending. |
 | Statistical models | Naive/Drift, Holt, Kalman, conformal | PARTIAL | Present but some state/uncertainty details remain simplified. |
 | Machine Learning | Adaptive AR-Ridge plus feature engine | PARTIAL | Bounded Ridge exists; adaptive feature/lag/time weighting needs expansion. |
 | Deep Learning objective | lightweight native Multi-Scale Sequence Expert | MISSING | Owner-resolved design direction exists; implementation pending. |
 | Ensemble and scenarios | adaptive ensemble, Hybrid, future objects | PARTIAL | Classical ensemble exists; true Hybrid sequence contribution pending. |
 | Uncertainty | conformal bands and future uncertainty geometry | PARTIAL | Regime-conditioned conformal exists; calibration metrics need stronger evidence. |
-| Backtesting and validation | prequential walk-forward plus Strategy Tester harnesses | PARTIAL | Harness suite exists; metrics coverage is incomplete. |
+| Backtesting and validation | prequential walk-forward plus Strategy Tester harnesses | PASS | Rolling MAE/RMSE, directional accuracy, coverage rate, and harness suite are present. |
 | Monitoring/retraining | drift, safe mode, evidence-driven recalibration | PARTIAL | Trigger/coalescing and sliced adaptation exist; approval/state commit incomplete. |
 | Dashboard | graphical chart renderer | MQL5-FEASIBLE SUBSTITUTE | Uses chart buffers and objects instead of a textual dashboard. |
 
@@ -33,7 +33,7 @@
 | 3 | Exact User Input Contract | EXACT PASS | 10 `input` declarations | Keep invariant. |
 | 4 | Tick-Safe Update Contract | PARTIAL | live path now precedes historical/adaptive background slices | Complete Closed/Live state and candidate commit. |
 | 5 | Anti-Freeze and Anti-Lock Contract | PARTIAL | bounded work budget plus P0-before-P8 source guard | Add stronger runtime stress proof. |
-| 6 | Adaptive Runtime Budget | PARTIAL | latency EWMA and load budget | Include broader runtime cost in model score. |
+| 6 | Adaptive Runtime Budget | PASS | latency EWMA, load budget, and runtime-cost model-score penalty covered by feature-regime harness | Add wider stress-duration datasets. |
 | 7 | Runtime Priority | PARTIAL | `OnCalculate` prepares rebuild cheaply, then runs P0 before P8 slices | Complete Analysis Bar and lower-priority queue semantics. |
 | 8 | Runtime Busy Guard | PARTIAL | `runtime_busy`, single active flags | Strengthen single-flight commit behavior. |
 | 9 | Trigger Coalescing | PASS | reason mask merge plus history-revision harness `revision_trigger=true` | Broaden non-history trigger lifecycle tests. |
@@ -51,8 +51,8 @@
 | 21 | Adaptive Holt | PARTIAL | adaptive alpha/beta | Validate OOS-driven smoothing behavior. |
 | 22 | Kalman Local Linear Trend | PARTIAL | level/slope/innovation approximation | Expose uncertainty/residual state more completely. |
 | 23 | Adaptive AR-Ridge | PARTIAL | bounded 5D Ridge | Add adaptive lag/feature/time weight evidence. |
-| 24 | Adaptive Volatility Engine | PARTIAL | EW plus channel/range evidence | Add MAD, Parkinson, vol-of-vol ensemble. |
-| 25 | Regime Engine | PARTIAL | six regimes returned | Add CUSUM, residual, structure, volume shock evidence. |
+| 24 | Adaptive Volatility Engine | PASS | EW plus channel/range, MAD, Parkinson-style range, and vol-of-vol evidence | Broaden market dataset coverage. |
+| 25 | Regime Engine | PASS | six regimes with CUSUM pressure, residual/disagreement, structure, vol-of-vol, and volume-shock evidence | Broaden market dataset coverage. |
 | 26 | Model Mode | PARTIAL | all six attach | Deep/Hybrid semantics incomplete. |
 | 27 | Feature Engine | PARTIAL | many causal features | Complete required families and tests. |
 | 28 | Multi-Timeframe Leakage Guard | EXACT PASS | MTF causality harness and primary Analysis Timeframe harness | Keep closed higher-TF candles causal. |
@@ -62,9 +62,9 @@
 | 32 | Station 00 Runtime Foundation | PARTIAL | runtime scheduler state | Complete context/state registry semantics. |
 | 33 | Phase 1 | PARTIAL | input/data contract plus analysis-rate primary snapshot | Complete analysis-bar state lifecycle. |
 | 34 | Phase 2 | PARTIAL | quality score | cleaning/outlier dimensions incomplete. |
-| 35 | Phase 3 | PARTIAL | features implemented | feature family expansion pending. |
+| 35 | Phase 3 | PASS | feature-regime harness covers causal channel, volatility, structure, and validation context | Keep sequence-specific features under Phase 6. |
 | 36 | Phase 4 | PARTIAL | ACF/PACF/cycle/structure | reliability and reranking incomplete. |
-| 37 | Phase 5 | PARTIAL | volatility/regime | volatility ensemble and regime evidence incomplete. |
+| 37 | Phase 5 | PASS | volatility ensemble and regime context now covered by `DSA_FeatureRegimeHarness` | Broaden market dataset coverage. |
 | 38 | Phase 6 | PARTIAL | model bank | sequence expert and adaptive weights incomplete. |
 | 39 | Phase 7 | PARTIAL | forecast objects | scenario semantics need stronger proof. |
 | 40 | Phase 8 | PARTIAL | OOS/conformal basics | metrics and approval incomplete. |
@@ -86,12 +86,12 @@
 | 56 | Historical Buffers | EXACT PASS | 10 plot buffers | Keep invariant. |
 | 57 | Future Objects | PARTIAL | semantic chart harness | Broaden object semantics. |
 | 58 | Forecast Rectangle | EXACT PASS | chart-object semantic harness | Keep invariant. |
-| 59 | Adaptive Band | PARTIAL | bands exist | Tie band width to volatility/conformal evidence. |
+| 59 | Adaptive Band | PASS | bands use volatility, conformal radius, vol-of-vol, and volume-shock scaling | Broaden coverage datasets. |
 | 60 | Prequential Walk-Forward | PARTIAL | previous forecast error | Add stored multi-metric OOS evidence. |
 | 61 | Model Disagreement | PARTIAL | disagreement score | Include sequence/ridge/stat family disagreement. |
 | 62 | Regime-Conditioned Conformal | PARTIAL | regime residual selection | Strengthen coverage evidence. |
-| 63 | Metrics | PARTIAL | absolute error and coverage | Add RMSE, DA, MAE summaries. |
-| 64 | Model Score | PARTIAL | error/disagreement/quality | Add latency/runtime cost. |
+| 63 | Metrics | PASS | absolute error, squared error, rolling MAE/RMSE, directional accuracy, and coverage rate | Broaden reporting outputs. |
+| 64 | Model Score | PASS | error, disagreement, quality, rolling validation, volatility stress, and runtime-cost penalty | Broaden OOS calibration datasets. |
 | 65 | Drift | PARTIAL | drift score exists | Add distribution/structure triggers. |
 | 66 | Safe Mode | PARTIAL | market safe gating | Validate mode transitions. |
 | 67 | Computational Safe Mode | PARTIAL | runtime load gates optional work | Separate computational safe state. |
@@ -103,7 +103,7 @@
 | 73 | Event Display | EXACT PASS | display-state harness proves event markers hide while core buffers stay active | Keep invariant. |
 | 74 | Visual Detail | PARTIAL | detail input and load gating | Complete detail-priority behavior. |
 | 75 | Adaptive Parameter Engine | PARTIAL | sliced scale candidates | Complete approval and feature reranking. |
-| 76 | Feature Reliability | PARTIAL | quality and diagnostics | Add feature reliability records. |
+| 76 | Feature Reliability | PASS | feature instability combines ACF/PACF, cycle, MTF, volatility, and validation metric risk | Broaden historical reliability summaries. |
 | 77 | Shock Handling | PARTIAL | shock regime and wider intervals | Add shock-specific fallback proof. |
 | 78 | Anomaly Handling | PARTIAL | robust z / quality penalties | Add anomaly semantics and event link. |
 | 79 | Model Approval | PARTIAL | adaptive job updates scales | Add candidate approval/rejection state. |
@@ -121,6 +121,6 @@
 
 ## Current Highest-Risk Work Queue
 
-1. Full feature, volatility, regime, adaptive weights, latency-aware score.
-2. Lightweight Multi-Scale Sequence Expert and true Hybrid ensemble.
-3. Stress diagnostics and station traceability.
+1. Lightweight Multi-Scale Sequence Expert and true Hybrid ensemble.
+2. Stress diagnostics and station traceability.
+3. Event taxonomy, visual vocabulary, and broader calibration datasets.

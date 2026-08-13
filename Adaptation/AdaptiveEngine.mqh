@@ -63,23 +63,33 @@ void DSA_ComputeAdaptiveDiagnostics(DSAFeatureSnapshot &feature,
    const double mtf_risk = (feature.mtf_available ? DSA_Clamp(MathAbs(feature.mtf_deviation) / 5.0,0.0,1.0) : 0.0);
    const double memory_instability = DSA_Clamp((MathAbs(feature.acf1 - feature.acf2) + MathAbs(feature.pacf2)) * 0.5,0.0,1.0);
    const double cycle_instability = DSA_Clamp(feature.cycle_score * model.disagreement,0.0,1.0);
+   const double volatility_instability = DSA_Clamp(0.60 * feature.vol_of_vol + 0.40 * feature.volume_shock,0.0,1.0);
+   const double metric_risk = (DSA_HasValue(validation.rolling_rmse) ?
+                               DSA_Clamp(validation.rolling_rmse / MathMax(model.interval_radius * 2.0,_Point),0.0,1.0) :
+                               validation.drift_score);
+   const double coverage_risk = (DSA_HasValue(validation.coverage_rate) ?
+                                 DSA_Clamp(MathAbs(0.90 - validation.coverage_rate) / 0.90,0.0,1.0) :
+                                 1.0 - validation.coverage_hit);
 
    adaptive.feature_instability = DSA_Clamp(0.45 * memory_instability +
-                                            0.25 * cycle_instability +
-                                            0.30 * mtf_risk,
+                                            0.20 * cycle_instability +
+                                            0.20 * mtf_risk +
+                                            0.15 * volatility_instability,
                                             0.0,1.0);
 
    adaptive.safe_mode_score = DSA_Clamp(0.25 * quality_risk +
                                         0.20 * model.drift_score +
                                         0.20 * model.disagreement +
-                                        0.15 * shock_risk +
-                                        0.20 * DSA_Clamp(runtime_load,0.0,1.0),
+                                        0.10 * shock_risk +
+                                        0.10 * metric_risk +
+                                        0.15 * DSA_Clamp(runtime_load,0.0,1.0),
                                         0.0,1.0);
 
-   adaptive.stress_score = DSA_Clamp(0.25 * shock_risk +
-                                     0.25 * validation.drift_score +
+   adaptive.stress_score = DSA_Clamp(0.20 * shock_risk +
+                                     0.20 * validation.drift_score +
                                      0.20 * adaptive.feature_instability +
-                                     0.15 * (1.0 - validation.coverage_hit) +
+                                     0.15 * coverage_risk +
+                                     0.10 * volatility_instability +
                                      0.15 * DSA_Clamp(runtime_load,0.0,1.0),
                                      0.0,1.0);
 

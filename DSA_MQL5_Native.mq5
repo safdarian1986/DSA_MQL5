@@ -568,10 +568,12 @@ void DSA_ProcessBarInto(const int index,
                       forecast_buffer,forecast_h2_buffer,forecast_h4_buffer,forecast_h8_buffer,
                       volatility_buffer,uncertainty_upper_buffer,uncertainty_lower_buffer,
                       absolute_error_buffer,regime_buffer,ridge_state_buffer,
-                      AdaptiveTuning.ridge_lambda_scale,AdaptiveTuning.interval_scale,live_bar,model);
+                      AdaptiveTuning.ridge_lambda_scale,AdaptiveTuning.interval_scale,
+                      RuntimeState.runtime_load,live_bar,model);
 
    DSA_ValidatePrequential(index,rates_total,feature,model,target_buffer,forecast_buffer,
-                           uncertainty_upper_buffer,uncertainty_lower_buffer,validation);
+                           uncertainty_upper_buffer,uncertainty_lower_buffer,
+                           absolute_error_buffer,coverage_buffer,validation);
 
    DSA_ComputeAdaptiveDiagnostics(feature,model,validation,RuntimeState.runtime_load,adaptive);
 

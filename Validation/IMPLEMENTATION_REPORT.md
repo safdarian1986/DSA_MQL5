@@ -20,8 +20,8 @@ This workspace contains a pure MQL5, non-trading MetaTrader 5 custom indicator i
 - `Core/StateRegistry.mqh`: explicit `DSAClosedState` and `DSALiveState` frames for closed/final and live/provisional state isolation.
 - `Runtime/`: runtime load, coalesced triggers, single-flight flags, stale-state guard, progressive build cursor, and rotating history-audit cursor.
 - `Data/`: independent Selection Data channel contract, auxiliary central series, data quality, per-bar revision fingerprinting, stable history checkpoints, causal MTF alignment, and Analysis Timeframe primary snapshots.
-- `Features/`: causal independent price channels, Analysis Timeframe primary target path, candle, return, volatility, slope, quality, ACF/PACF, cycle, structure, and MTF feature snapshots.
-- `Models/`: Naive/Drift, Adaptive Holt, local-linear Kalman, bounded causal AR-Ridge, ensemble, regime, disagreement, conformal radius, multi-horizon residual growth, and market safe-mode gating.
+- `Features/`: causal independent price channels, Analysis Timeframe primary target path, candle, return, MAD/range/vol-of-vol volatility, CUSUM pressure, volume shock, structure context, ACF/PACF, cycle, and MTF feature snapshots.
+- `Models/`: Naive/Drift, Adaptive Holt, local-linear Kalman, bounded causal AR-Ridge, ensemble, regime, disagreement, conformal radius, multi-horizon residual growth, runtime-cost scoring, volatility stress, and market safe-mode gating.
 - `Validation/`: prequential forecast resolution and tester harnesses.
 - `Adaptation/`: evidence-driven diagnostics and sliced interval/ridge-scale candidate evaluation.
 - `Events/`: causal event candidate generation.
@@ -37,10 +37,10 @@ This workspace contains a pure MQL5, non-trading MetaTrader 5 custom indicator i
 
 ## Fresh Validation Evidence
 
-- Final indicator compile log for the latest independent pass: `compile-evidence-20260813-181916-final.log`.
+- Final indicator compile log for the latest independent pass: `compile-evidence-20260813-183403-final.log`.
 - Final indicator compile result: `0 errors, 0 warnings`.
-- Latest harness compile logs include `compile-evidence-20260813-181916-runtime-harness.log`, `compile-evidence-20260813-181916-deep-harness.log`, `compile-evidence-20260813-181916-chart-harness.log`, `compile-evidence-20260813-181916-mtf-harness.log`, `compile-evidence-20260813-181916-adversarial-harness.log`, `compile-evidence-20260813-181916-modes-harness.log`, `compile-evidence-20260813-181916-selection-harness.log`, `compile-evidence-20260813-181916-analysis-timeframe-harness.log`, `compile-evidence-20260813-181916-state-harness.log`, `compile-evidence-20260813-181916-display-harness.log`, and `compile-evidence-20260813-181916-history-revision-harness.log`; all report `0 errors, 0 warnings`.
-- Latest Strategy Tester evidence: `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`, run window `2026-08-13 18:09-18:20`.
+- Latest harness compile logs include `compile-evidence-20260813-183403-runtime-harness.log`, `compile-evidence-20260813-183403-deep-harness.log`, `compile-evidence-20260813-183403-chart-harness.log`, `compile-evidence-20260813-183403-mtf-harness.log`, `compile-evidence-20260813-183403-adversarial-harness.log`, `compile-evidence-20260813-183403-modes-harness.log`, `compile-evidence-20260813-183403-selection-harness.log`, `compile-evidence-20260813-183403-analysis-timeframe-harness.log`, `compile-evidence-20260813-183403-state-harness.log`, `compile-evidence-20260813-183403-display-harness.log`, `compile-evidence-20260813-183403-history-revision-harness.log`, and `compile-evidence-20260813-183403-feature-regime-harness.log`; all report `0 errors, 0 warnings`.
+- Latest Strategy Tester evidence: `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`, run window `2026-08-13 18:34-18:42`.
 - Selection Data harness: `OnTester result 1`, `failures=0`, direct independent-channel contract checks passed.
 - Adversarial full-history / anti-repaint harness: `OnTester result 1`, `failures=0`, `deep_bars=8437`, `oldest_shift=8387`, `mid_shift=4193`, `anti_repaint=true`.
 - MTF causality harness: `OnTester result 1`, `failures=0`, `samples=234`.
@@ -52,6 +52,7 @@ This workspace contains a pure MQL5, non-trading MetaTrader 5 custom indicator i
 - State-isolation harness: `OnTester result 1`, `failures=0`, `checks=4`.
 - Display-state harness: `OnTester result 1`, `failures=0`, `hidden_history=true`, `forecast_hidden=true`, `events_hidden=true`.
 - History-revision harness: `OnTester result 1`, `failures=0`, `checks=7`, `history_fingerprint_changed=true`, `stale_candidate_rejected=true`, `unsampled_candidate_rejected=true`.
+- Feature-regime harness: `OnTester result 1`, `failures=0`, `checks=5`, `feature_context=true`, `regime_context=true`, `runtime_score=true`, `rolling_metrics=true`, `adaptive_stress=true`.
 
 ## Remaining Limits
 

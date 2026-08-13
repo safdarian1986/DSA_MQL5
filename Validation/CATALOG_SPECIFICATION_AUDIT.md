@@ -48,10 +48,11 @@
 | Naive / Holt / Kalman | PASS | `Models/ModelBank.mqh` |
 | AR-Ridge | PASS | causal bounded ridge solve; Fast Path holds prior ridge state |
 | Adaptive ensemble | PASS | mode and maturity weights in `DSA_ComputeModels` |
-| Prequential validation | PASS | previous forecast resolved against newly available target |
+| Prequential validation | PASS | previous forecast plus rolling MAE/RMSE, directional accuracy, and coverage metrics |
 | Conformal uncertainty | PASS | causal residual pools with regime preference |
 | Drift and market safe mode | PASS | model drift, disagreement, quality, shock gating |
 | Computational safe-mode behavior | PASS | runtime load gates heavy jobs and reduces visual horizon |
+| Feature / volatility / regime scoring | PASS | MAD, Parkinson-style range, vol-of-vol, CUSUM pressure, volume shock, structure context, runtime-cost score, and feature-regime harness |
 | Future object semantics | PASS | semantic chart harness validates types, anchors, bounds, scenarios |
 | All official Model Mode values attach | PASS | `DSA_ModelModeHarness`, all six modes true |
 | Deep Learning implementation | MISSING | owner-resolved lightweight Multi-Scale Sequence Expert not yet implemented |
@@ -61,9 +62,9 @@
 
 ## Fresh Evidence
 
-- Final compile: `compile-evidence-20260813-181916-final.log`, `0 errors, 0 warnings`.
-- Harness compiles: `compile-evidence-20260813-181916-*-harness.log`, all `0 errors, 0 warnings`.
-- Latest Strategy Tester run window: `2026-08-13 18:09-18:20` in `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`.
+- Final compile: `compile-evidence-20260813-183403-final.log`, `0 errors, 0 warnings`.
+- Harness compiles: `compile-evidence-20260813-183403-*-harness.log`, all `0 errors, 0 warnings`.
+- Latest Strategy Tester run window: `2026-08-13 18:34-18:42` in `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`.
 - Selection Data runtime: `OnTester result 1`, `failures=0`, independent O/H/L/C, H/L, and O/C contract validated.
 - Adversarial full-history and anti-repaint runtime: `OnTester result 1`, `failures=0`, `deep_bars=8437`.
 - MTF causality runtime: `OnTester result 1`, `failures=0`, `samples=234`.
@@ -71,6 +72,7 @@
 - State-isolation runtime: `OnTester result 1`, `failures=0`, `checks=4`.
 - Display-state runtime: `OnTester result 1`, `failures=0`, `hidden_history=true`, `forecast_hidden=true`, `events_hidden=true`.
 - History-revision runtime: `OnTester result 1`, `failures=0`, `checks=7`, `history_fingerprint_changed=true`, `stale_candidate_rejected=true`, `unsampled_candidate_rejected=true`.
+- Feature-regime runtime: `OnTester result 1`, `failures=0`, `checks=5`, `runtime_score=true`, `rolling_metrics=true`, `adaptive_stress=true`.
 - Future object semantic runtime: `OnTester result 1`, `failures=0`, `count=121`.
 - Model mode runtime: `OnTester result 1`, all six official modes true.
 

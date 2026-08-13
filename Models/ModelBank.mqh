@@ -22,24 +22,37 @@ struct DSAModelSnapshot
    double horizon_growth;
    double model_score;
    double drift_score;
+   double runtime_cost_score;
+   double volatility_stress;
    int regime;
    bool safe_mode;
 };
 
 int DSA_ClassifyRegime(DSAFeatureSnapshot &feature,const double disagreement,const double drift_score)
 {
-   if(feature.quality_score < 45.0 || MathAbs(feature.robust_z) > 4.0 || drift_score > 0.85)
+   if(feature.quality_score < 45.0 ||
+      MathAbs(feature.robust_z) > 4.0 ||
+      drift_score > 0.85 ||
+      (feature.volume_shock > 0.80 && MathAbs(feature.robust_z) > 2.0))
       return DSA_REGIME_SHOCK;
+   if(feature.vol_of_vol > 0.75 && disagreement > 0.35)
+      return DSA_REGIME_VOLATILE;
    if(feature.multi_channel &&
       feature.selected_spread > MathMax(feature.volatility * 2.5,feature.candle_range * 0.75) &&
       disagreement > 0.55)
       return DSA_REGIME_VOLATILE;
    if(feature.volatility > MathMax(MathAbs(feature.target) * 0.015,10.0 * _Point) && MathAbs(feature.robust_z) > 2.0)
       return DSA_REGIME_VOLATILE;
+   if(feature.cusum_pressure > 0.45 && feature.persistence > 0.15)
+      return DSA_REGIME_TREND_UP;
+   if(feature.cusum_pressure < -0.45 && feature.persistence > 0.15)
+      return DSA_REGIME_TREND_DOWN;
    if(feature.slope > feature.volatility * 0.12 && feature.persistence > 0.20)
       return DSA_REGIME_TREND_UP;
    if(feature.slope < -feature.volatility * 0.12 && feature.persistence > 0.20)
       return DSA_REGIME_TREND_DOWN;
+   if(feature.congestion_score > 0.65 && MathAbs(feature.cusum_pressure) < 0.35)
+      return DSA_REGIME_RANGE;
    if(feature.quality_score < 60.0 || disagreement > 0.70)
       return DSA_REGIME_UNCERTAIN;
    return DSA_REGIME_RANGE;
@@ -362,6 +375,7 @@ void DSA_ComputeModels(const int index,
                         const double &ridge_state_buffer[],
                         const double ridge_lambda_scale,
                         const double interval_scale,
+                        const double runtime_load,
                         const bool fast_path,
                         DSAModelSnapshot &model)
 {
@@ -455,6 +469,44 @@ void DSA_ComputeModels(const int index,
       w_ridge = 0.00;
    }
 
+   const double quality_confidence = DSA_Clamp(feature.quality_score / 100.0,0.0,1.0);
+   const double maturity_confidence = DSA_Clamp((double)(feature.maturity - 40) / 160.0,0.0,1.0);
+   const double trend_pressure = DSA_Clamp(MathAbs(feature.cusum_pressure),0.0,1.0);
+   const double instability_pressure = DSA_Clamp(0.45 * feature.vol_of_vol +
+                                                 0.35 * feature.volume_shock +
+                                                 0.20 * (1.0 - quality_confidence),
+                                                 0.0,1.0);
+
+   if(trend_pressure > 0.35 && feature.persistence > 0.15)
+   {
+      w_holt += 0.05 * trend_pressure;
+      w_kalman += 0.08 * trend_pressure;
+      w_naive = MathMax(w_naive - 0.04 * trend_pressure,0.0);
+   }
+
+   if(instability_pressure > 0.35)
+   {
+      w_naive += 0.10 * instability_pressure;
+      w_kalman += 0.08 * instability_pressure;
+      w_holt = MathMax(w_holt - 0.03 * instability_pressure,0.0);
+      w_ridge = MathMax(w_ridge - 0.15 * instability_pressure,0.0);
+   }
+
+   if(feature.congestion_score > 0.55)
+   {
+      w_naive += 0.08 * feature.congestion_score;
+      w_holt += 0.04 * feature.congestion_score;
+      w_kalman = MathMax(w_kalman - 0.04 * feature.congestion_score,0.0);
+      w_ridge = MathMax(w_ridge - 0.04 * feature.congestion_score,0.0);
+   }
+
+   if(maturity_confidence > 0.0 && instability_pressure < 0.40 && contract.model_mode != DSA_MODEL_STATISTICAL)
+   {
+      const double ridge_boost = 0.08 * maturity_confidence * quality_confidence;
+      w_ridge += ridge_boost;
+      w_naive = MathMax(w_naive - 0.04 * ridge_boost,0.0);
+   }
+
    const double spread_1 = MathAbs(model.naive - model.holt_forecast);
    const double spread_2 = MathAbs(model.kalman_forecast - model.ridge_forecast);
    model.disagreement = DSA_Clamp((spread_1 + spread_2) / MathMax(4.0 * feature.volatility,_Point),0.0,1.0);
@@ -479,6 +531,7 @@ void DSA_ComputeModels(const int index,
                                    DSA_ConformalRadius(index,rates_total,model.regime,feature,
                                                        absolute_error_buffer,regime_buffer,model.interval_radius));
    model.interval_radius *= DSA_Clamp(interval_scale,0.75,1.75);
+   model.interval_radius *= 1.0 + 0.15 * feature.vol_of_vol + 0.10 * feature.volume_shock;
    model.horizon_growth = DSA_MultiHorizonGrowth(index,rates_total,model.interval_radius,
                                                  target_buffer,
                                                  forecast_h2_buffer,forecast_h4_buffer,forecast_h8_buffer);
@@ -487,6 +540,8 @@ void DSA_ComputeModels(const int index,
                       feature.quality_score < 50.0 ||
                       model.disagreement > 0.82 ||
                       model.drift_score > 0.88 ||
+                      feature.volume_shock > 0.92 ||
+                      feature.vol_of_vol > 1.20 ||
                       model.regime == DSA_REGIME_SHOCK);
 
    if(model.safe_mode)
@@ -506,10 +561,17 @@ void DSA_ComputeModels(const int index,
 
    model.ensemble_state = model.kalman_level;
    model.band_radius = MathMax(feature.volatility,model.interval_radius * 0.70);
+   model.runtime_cost_score = DSA_Clamp(runtime_load,0.0,1.5) / 1.5;
+   model.volatility_stress = DSA_Clamp(0.45 * feature.vol_of_vol +
+                                       0.35 * feature.volume_shock +
+                                       0.20 * MathAbs(feature.cusum_pressure),
+                                       0.0,1.0);
    model.model_score = DSA_Clamp(100.0 -
                                  35.0 * model.drift_score -
                                  20.0 * model.disagreement -
-                                 25.0 * (1.0 - feature.quality_score / 100.0),
+                                 25.0 * (1.0 - feature.quality_score / 100.0) -
+                                 12.0 * model.runtime_cost_score -
+                                 8.0 * model.volatility_stress,
                                  0.0,100.0);
 }
 
