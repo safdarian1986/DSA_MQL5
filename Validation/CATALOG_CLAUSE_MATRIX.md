@@ -75,7 +75,7 @@
 | 45 | Slow Path Evidence-Driven | PARTIAL | adaptive/rebuild triggers and retained-output candidate buffers | Complete candidate lifecycle evidence. |
 | 46 | Slow Work Slicing | PARTIAL | budgeted slices can run against candidate buffers | Add stronger single-flight/candidate proof. |
 | 47 | Full Historical Pass | EXACT PASS | adversarial full-history harness | Keep invariant. |
-| 48 | Atomic State Commit | PARTIAL | retained-output rebuilds process into candidate buffers and reject stale candidates before commit | Add display-state runtime tests. |
+| 48 | Atomic State Commit | PARTIAL | retained-output rebuilds process into candidate buffers and reject stale candidates before commit; display toggles keep engines active | Add revised-history runtime proof. |
 | 49 | Input Fingerprint | PARTIAL | computational fingerprint exists | Separate display-only inputs from analytical state. |
 | 50 | Input Changes | PARTIAL | input change triggers rebuild | Avoid unnecessary rebuild for display-only changes. |
 | 51 | Graphical Output Contract | PARTIAL | 10 buffers and future objects | Complete graphical vocabulary proof. |
@@ -98,9 +98,9 @@
 | 68 | Event Engine | PARTIAL | up/down/aux events | Add full supported event taxonomy. |
 | 69 | Historical Event Finality | PARTIAL | anti-repaint harness covers outputs | Add event-specific finality test. |
 | 70 | Live Events | PARTIAL | Candle0 provisional events | Isolate from historical commit. |
-| 71 | Historical Analysis | PARTIAL | display hiding implemented | Ensure engine remains active when hidden. |
-| 72 | Forecast Display | EXACT PASS | engine continues; objects hidden | Keep invariant. |
-| 73 | Event Display | EXACT PASS | engine computes before marker gating | Keep invariant. |
+| 71 | Historical Analysis | PASS | display-state harness proves historical plots hide while calculation buffers stay active | Keep invariant. |
+| 72 | Forecast Display | EXACT PASS | display-state harness proves forecast objects hide while forecast buffers stay active | Keep invariant. |
+| 73 | Event Display | EXACT PASS | display-state harness proves event markers hide while core buffers stay active | Keep invariant. |
 | 74 | Visual Detail | PARTIAL | detail input and load gating | Complete detail-priority behavior. |
 | 75 | Adaptive Parameter Engine | PARTIAL | sliced scale candidates | Complete approval and feature reranking. |
 | 76 | Feature Reliability | PARTIAL | quality and diagnostics | Add feature reliability records. |
@@ -121,6 +121,6 @@
 
 ## Current Highest-Risk Work Queue
 
-1. Display-state and revised-history runtime proof.
+1. Revised-history runtime proof.
 2. Full feature, volatility, regime, adaptive weights, latency-aware score.
 3. Lightweight Multi-Scale Sequence Expert and true Hybrid ensemble.

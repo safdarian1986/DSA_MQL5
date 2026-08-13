@@ -40,6 +40,7 @@
 | Fast Path priority | PASS | `OnCalculate` runs lightweight rebuild preparation, Analysis Bar commit when needed, P0 live path, then historical/adaptive background work |
 | New Analysis Bar commit sequence | PASS | `DSA_ShouldRunMediumPath`, `DSA_ProcessAnalysisCommitBar`, Analysis Timeframe harness `commit_samples=30`, `hold_samples=90` |
 | ClosedState / LiveState isolation | PASS | `Core/StateRegistry.mqh`, `DSAClosedState`, `DSALiveState`, state-isolation harness `checks=4` |
+| Display-state toggles | PASS | `DSA_DisplayStateHarness` validates hidden historical plots, forecast objects, and event markers while calculation buffers remain active |
 | Retained-output candidate rebuild | PASS | `DSA_CandidateBuildActive`, `DSA_CandidateBuildMatches`, and `DSA_CommitCandidateBuffers` protect visible history during retained rebuilds and reject stale candidates |
 | Closed historical anti-repaint | PASS | adversarial harness captured closed bar and compared after future bars |
 | MTF leakage guard | PASS | `Data/MTFAlignment.mqh`, MTF harness `samples=234` |
@@ -60,14 +61,15 @@
 
 ## Fresh Evidence
 
-- Final compile: `compile-evidence-20260813-173327-final.log`, `0 errors, 0 warnings`.
-- Harness compiles: `compile-evidence-20260813-173327-*-harness.log`, all `0 errors, 0 warnings`.
-- Latest Strategy Tester run window: `2026-08-13 17:34-17:37` in `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`.
+- Final compile: `compile-evidence-20260813-174611-final.log`, `0 errors, 0 warnings`.
+- Harness compiles: `compile-evidence-20260813-174611-*-harness.log`, all `0 errors, 0 warnings`.
+- Latest Strategy Tester run window: `2026-08-13 17:47-17:50` in `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`.
 - Selection Data runtime: `OnTester result 1`, `failures=0`, independent O/H/L/C, H/L, and O/C contract validated.
 - Adversarial full-history and anti-repaint runtime: `OnTester result 1`, `failures=0`, `deep_bars=8437`.
 - MTF causality runtime: `OnTester result 1`, `failures=0`, `samples=234`.
 - Analysis Timeframe runtime: `OnTester result 1`, `failures=0`, `samples=120`, `commit_samples=30`, `hold_samples=90`.
 - State-isolation runtime: `OnTester result 1`, `failures=0`, `checks=4`.
+- Display-state runtime: `OnTester result 1`, `failures=0`, `hidden_history=true`, `forecast_hidden=true`, `events_hidden=true`.
 - Future object semantic runtime: `OnTester result 1`, `failures=0`, `count=121`.
 - Model mode runtime: `OnTester result 1`, all six official modes true.
 

@@ -51,6 +51,7 @@ jobs:
             'Validation/DSA_SelectionDataHarness.mq5',
             'Validation/DSA_AnalysisTimeframeHarness.mq5',
             'Validation/DSA_StateIsolationHarness.mq5',
+            'Validation/DSA_DisplayStateHarness.mq5',
             'Validation/DSA_RuntimeHarness.mq5',
             'Validation/DSA_DeepLearningHarness.mq5',
             'Validation/RuntimeTesterAdversarial.ini',
@@ -60,6 +61,7 @@ jobs:
             'Validation/RuntimeTesterSelection.ini',
             'Validation/RuntimeTesterAnalysisTimeframe.ini',
             'Validation/RuntimeTesterState.ini',
+            'Validation/RuntimeTesterDisplay.ini',
             'Validation/RuntimeTester.ini',
             'Validation/RuntimeTesterDeep.ini'
           )
@@ -152,6 +154,16 @@ jobs:
               $indicatorHeader -notmatch 'DSA_BeginLiveStateFromClosed' -or
               $indicatorHeader -notmatch 'DSA_CaptureLiveStateFromMainBuffers') {
             throw 'Expected indicator to commit ClosedState and derive LiveState from it.'
+          }
+
+          $displayHarness = Get-Content -LiteralPath 'Validation/DSA_DisplayStateHarness.mq5' -Raw
+          if ($displayHarness -notmatch 'HiddenHistoryOk' -or
+              $displayHarness -notmatch 'ForecastHiddenOk' -or
+              $displayHarness -notmatch 'EventsHiddenOk' -or
+              $indicatorHeader -notmatch 'if\\(!InputContract\\.historical_display && !live_bar\\)' -or
+              $indicatorHeader -notmatch 'if\\(InputContract\\.event_display\\)' -or
+              (Get-Content -LiteralPath 'Visual/VisualRenderer.mqh' -Raw) -notmatch 'if\\(!contract\\.forecast_display\\)') {
+            throw 'Expected display toggles to hide only graphical output while core buffers continue.'
           }
 
           $mqlFiles = Get-ChildItem -Recurse -Force -File -Include '*.mq5','*.mqh' |

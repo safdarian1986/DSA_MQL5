@@ -37,10 +37,10 @@ This workspace contains a pure MQL5, non-trading MetaTrader 5 custom indicator i
 
 ## Fresh Validation Evidence
 
-- Final indicator compile log for the latest independent pass: `compile-evidence-20260813-173327-final.log`.
+- Final indicator compile log for the latest independent pass: `compile-evidence-20260813-174611-final.log`.
 - Final indicator compile result: `0 errors, 0 warnings`.
-- Latest harness compile logs include `compile-evidence-20260813-173327-runtime-harness.log`, `compile-evidence-20260813-173327-deep-harness.log`, `compile-evidence-20260813-173327-chart-harness.log`, `compile-evidence-20260813-173327-mtf-harness.log`, `compile-evidence-20260813-173327-adversarial-harness.log`, `compile-evidence-20260813-173327-modes-harness.log`, `compile-evidence-20260813-173327-selection-harness.log`, `compile-evidence-20260813-173327-analysis-timeframe-harness.log`, and `compile-evidence-20260813-173327-state-harness.log`; all report `0 errors, 0 warnings`.
-- Latest Strategy Tester evidence: `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`, run window `2026-08-13 17:34-17:37`.
+- Latest harness compile logs include `compile-evidence-20260813-174611-runtime-harness.log`, `compile-evidence-20260813-174611-deep-harness.log`, `compile-evidence-20260813-174611-chart-harness.log`, `compile-evidence-20260813-174611-mtf-harness.log`, `compile-evidence-20260813-174611-adversarial-harness.log`, `compile-evidence-20260813-174611-modes-harness.log`, `compile-evidence-20260813-174611-selection-harness.log`, `compile-evidence-20260813-174611-analysis-timeframe-harness.log`, `compile-evidence-20260813-174611-state-harness.log`, and `compile-evidence-20260813-174611-display-harness.log`; all report `0 errors, 0 warnings`.
+- Latest Strategy Tester evidence: `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`, run window `2026-08-13 17:47-17:50`.
 - Selection Data harness: `OnTester result 1`, `failures=0`, direct independent-channel contract checks passed.
 - Adversarial full-history / anti-repaint harness: `OnTester result 1`, `failures=0`, `deep_bars=8437`, `oldest_shift=8387`, `mid_shift=4193`, `anti_repaint=true`.
 - MTF causality harness: `OnTester result 1`, `failures=0`, `samples=234`.
@@ -50,6 +50,7 @@ This workspace contains a pure MQL5, non-trading MetaTrader 5 custom indicator i
 - Model-mode harness: `OnTester result 1`, `failures=0`, all six official modes attached and produced ordered bands/uncertainty.
 - Analysis Timeframe harness: `OnTester result 1`, `failures=0`, `samples=120`, `commit_samples=30`, `hold_samples=90`.
 - State-isolation harness: `OnTester result 1`, `failures=0`, `checks=4`.
+- Display-state harness: `OnTester result 1`, `failures=0`, `hidden_history=true`, `forecast_hidden=true`, `events_hidden=true`.
 
 ## Remaining Limits
 
@@ -60,4 +61,4 @@ This workspace contains a pure MQL5, non-trading MetaTrader 5 custom indicator i
 
 ## Assessment
 
-The implementation is materially stronger after the adversarial audit, history-revision audit, independent Selection Data channel work, Fast Path priority ordering, Analysis Timeframe primary target routing, New Analysis Bar commit sequencing, explicit ClosedState/LiveState isolation, and retained-output candidate rebuilds. It is still not production-ready because the lightweight Multi-Scale Sequence Expert, true Hybrid participation, display-state and revised-history runtime proof, and other clause-level Catalog contracts still require completion and proof.
+The implementation is materially stronger after the adversarial audit, history-revision audit, independent Selection Data channel work, Fast Path priority ordering, Analysis Timeframe primary target routing, New Analysis Bar commit sequencing, explicit ClosedState/LiveState isolation, display-state proof, and retained-output candidate rebuilds. It is still not production-ready because the lightweight Multi-Scale Sequence Expert, true Hybrid participation, revised-history runtime proof, and other clause-level Catalog contracts still require completion and proof.
