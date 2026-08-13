@@ -1,0 +1,31 @@
+# Local editor and OS metadata
+.vscode/
+.idea/
+*.tmp
+*.bak
+*.swp
+Thumbs.db
+Desktop.ini
+
+# MetaTrader generated binaries
+*.ex5
+!DSA_MQL5_Native.ex5
+
+# Repetitive local compiler logs
+compile-*.log
+!compile-goal2-20260813-133756-final.log
+!compile-goal2-20260813-133756-adversarial-harness.log
+!compile-goal2-20260813-133756-mtf-harness.log
+!compile-goal2-20260813-133756-chart-harness.log
+!compile-goal2-20260813-133756-modes-harness.log
+!compile-goal2-20260813-133756-runtime-harness.log
+!compile-goal2-20260813-133756-deep-harness.log
+
+# MetaTrader tester/runtime local output
+Tester/
+MQL5/Logs/
+logs/
+*.opt
+*.set
+*.xml
+*.html

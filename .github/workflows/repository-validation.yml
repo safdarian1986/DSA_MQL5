@@ -1,0 +1,148 @@
+name: DSA-MQL5 Repository Validation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  repository-validation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate repository baseline
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $requiredFiles = @(
+            'README.md',
+            'DSA_MQL5_Native.mq5',
+            'DSA_MQL5_Native.ex5',
+            'Core/DSACommon.mqh',
+            'Core/InputContract.mqh',
+            'Runtime/TickScheduler.mqh',
+            'Data/DataContract.mqh',
+            'Data/MTFAlignment.mqh',
+            'Features/FeatureEngine.mqh',
+            'Models/ModelBank.mqh',
+            'Adaptation/AdaptiveEngine.mqh',
+            'Validation/ValidationEngine.mqh',
+            'Events/EventEngine.mqh',
+            'Visual/VisualRenderer.mqh',
+            'Stations/StationManifest.mqh',
+            'Catalog/DSA_MQL5_EN.docx',
+            'Catalog/DataSience-en.docx',
+            'Validation/IMPLEMENTATION_REPORT.md',
+            'Validation/CATALOG_SPECIFICATION_AUDIT.md',
+            'Validation/COMPLETION_AUDIT.md',
+            'Validation/DSA_AdversarialHarness.mq5',
+            'Validation/DSA_MtfCausalityHarness.mq5',
+            'Validation/DSA_ChartObjectHarness.mq5',
+            'Validation/DSA_ModelModeHarness.mq5',
+            'Validation/DSA_RuntimeHarness.mq5',
+            'Validation/DSA_DeepLearningHarness.mq5',
+            'Validation/RuntimeTesterAdversarial.ini',
+            'Validation/RuntimeTesterMtf.ini',
+            'Validation/RuntimeTesterChart.ini',
+            'Validation/RuntimeTesterModes.ini',
+            'Validation/RuntimeTester.ini',
+            'Validation/RuntimeTesterDeep.ini'
+          )
+
+          foreach ($path in $requiredFiles) {
+            if (-not (Test-Path -LiteralPath $path)) {
+              throw "Missing required project file: $path"
+            }
+          }
+
+          $requiredDirectories = @(
+            'Catalog',
+            'Core',
+            'Runtime',
+            'Data',
+            'Features',
+            'Models',
+            'Adaptation',
+            'Validation',
+            'Events',
+            'Visual',
+            'Stations'
+          )
+
+          foreach ($path in $requiredDirectories) {
+            if (-not (Test-Path -LiteralPath $path -PathType Container)) {
+              throw "Missing required project directory: $path"
+            }
+          }
+
+          $inputMatches = Select-String -LiteralPath 'DSA_MQL5_Native.mq5' -Pattern '^input '
+          if ($inputMatches.Count -ne 10) {
+            throw "Expected exactly 10 official input declarations, found $($inputMatches.Count)"
+          }
+
+          $indicatorHeader = Get-Content -LiteralPath 'DSA_MQL5_Native.mq5' -Raw
+          if ($indicatorHeader -notmatch '#property\s+indicator_plots\s+10') {
+            throw 'Expected exactly 10 indicator plots.'
+          }
+
+          if ($indicatorHeader -notmatch '#property\s+indicator_buffers\s+29') {
+            throw 'Expected 29 mapped indicator buffers, including calculation buffers.'
+          }
+
+          $mqlFiles = Get-ChildItem -Recurse -File -Include '*.mq5','*.mqh' |
+            Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' }
+
+          $forbiddenPattern = 'OrderSend|OrderSendAsync|CTrade|PositionSelect|PositionGet|WebRequest|#import|Socket|Wininet|kernel32|shell32|EventSetTimer|OnTimer|UpdateInterval|Python'
+          foreach ($file in $mqlFiles) {
+            $content = Get-Content -LiteralPath $file.FullName -Raw
+            if ($content -match $forbiddenPattern) {
+              throw "Forbidden trading, timer, or external dependency marker found in $($file.FullName)"
+            }
+          }
+
+          foreach ($file in $mqlFiles) {
+            $content = Get-Content -LiteralPath $file.FullName -Raw
+            if ($content -match 'neural|LSTM|GRU|TCN|Transformer|Multi-Scale Sequence') {
+              throw "Undefined neural or sequence-model implementation marker found in $($file.FullName)"
+            }
+          }
+
+          $textFiles = @()
+          $textFiles += Get-ChildItem -Recurse -File -Include '*.mq5','*.mqh','*.md','*.ini','*.yml','*.yaml' |
+            Where-Object { $_.FullName -notmatch '[\\/]\.git[\\/]' }
+          $textFiles += Get-Item -LiteralPath '.gitignore'
+
+          foreach ($file in $textFiles) {
+            $content = Get-Content -LiteralPath $file.FullName -Raw
+            if ($content -match '[^\x00-\x7F]') {
+              throw "Non-ASCII project-owned text found in $($file.FullName)"
+            }
+          }
+
+          $compileLogs = Get-ChildItem -File -Filter 'compile-goal2-20260813-133756-*.log'
+          if ($compileLogs.Count -lt 7) {
+            throw "Expected at least 7 retained compile evidence logs, found $($compileLogs.Count)"
+          }
+
+          foreach ($log in $compileLogs) {
+            $content = Get-Content -LiteralPath $log.FullName -Raw
+            if ($content -notmatch 'Result:\s+0 errors,\s+0 warnings') {
+              throw "Compile evidence log does not report 0 errors and 0 warnings: $($log.Name)"
+            }
+          }
+
+          $audit = Get-Content -LiteralPath 'Validation/COMPLETION_AUDIT.md' -Raw
+          if ($audit -notmatch 'BLOCKED BY SPECIFICATION GAP') {
+            throw 'Completion audit must preserve the current specification-gap readiness status.'
+          }
+
+          if ($audit -notmatch 'Deep Learning / Multi-Scale Sequence Expert') {
+            throw 'Completion audit must preserve the Deep Learning specification gap.'
+          }
