@@ -13,13 +13,7 @@ Desktop.ini
 
 # Repetitive local compiler logs
 compile-*.log
-!compile-goal2-20260813-133756-final.log
-!compile-goal2-20260813-133756-adversarial-harness.log
-!compile-goal2-20260813-133756-mtf-harness.log
-!compile-goal2-20260813-133756-chart-harness.log
-!compile-goal2-20260813-133756-modes-harness.log
-!compile-goal2-20260813-133756-runtime-harness.log
-!compile-goal2-20260813-133756-deep-harness.log
+!compile-evidence-*.log
 
 # MetaTrader tester/runtime local output
 Tester/

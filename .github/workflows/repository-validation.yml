@@ -92,8 +92,12 @@ jobs:
             throw 'Expected exactly 10 indicator plots.'
           }
 
-          if ($indicatorHeader -notmatch '#property\s+indicator_buffers\s+29') {
-            throw 'Expected 29 mapped indicator buffers, including calculation buffers.'
+          if ($indicatorHeader -notmatch '#property\s+indicator_buffers\s+30') {
+            throw 'Expected 30 mapped indicator buffers, including calculation buffers.'
+          }
+
+          if ($indicatorHeader -notmatch 'CalcBarFingerprint' -or $indicatorHeader -notmatch 'DSA_AuditHistoricalRevisionSlice') {
+            throw 'Expected per-bar history revision audit support in the indicator source.'
           }
 
           $mqlFiles = Get-ChildItem -Recurse -Force -File -Include '*.mq5','*.mqh' |
@@ -126,7 +130,7 @@ jobs:
             }
           }
 
-          $compileLogs = Get-ChildItem -File -Filter 'compile-goal2-20260813-133756-*.log'
+          $compileLogs = Get-ChildItem -File -Filter 'compile-evidence-*.log'
           if ($compileLogs.Count -lt 7) {
             throw "Expected at least 7 retained compile evidence logs, found $($compileLogs.Count)"
           }

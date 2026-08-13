@@ -16,8 +16,8 @@ This workspace contains a pure MQL5, non-trading MetaTrader 5 custom indicator i
 
 - `DSA_MQL5_Native.mq5`: main custom indicator entrypoint.
 - `Core/`: common helpers and the 10-input contract.
-- `Runtime/`: runtime load, coalesced triggers, single-flight flags, stale-state guard, and progressive build cursor.
-- `Data/`: target selection, auxiliary central series, data quality, sparse history fingerprinting, and causal MTF alignment.
+- `Runtime/`: runtime load, coalesced triggers, single-flight flags, stale-state guard, progressive build cursor, and rotating history-audit cursor.
+- `Data/`: target selection, auxiliary central series, data quality, per-bar revision fingerprinting, stable history checkpoints, and causal MTF alignment.
 - `Features/`: causal candle, return, volatility, slope, quality, ACF/PACF, cycle, structure, and MTF feature snapshots.
 - `Models/`: Naive/Drift, Adaptive Holt, local-linear Kalman, bounded causal AR-Ridge, ensemble, regime, disagreement, conformal radius, multi-horizon residual growth, and market safe-mode gating.
 - `Validation/`: prequential forecast resolution and tester harnesses.
@@ -35,10 +35,10 @@ This workspace contains a pure MQL5, non-trading MetaTrader 5 custom indicator i
 
 ## Fresh Validation Evidence
 
-- Final indicator compile log for the latest independent pass: `compile-goal2-20260813-133756-final.log`.
+- Final indicator compile log for the latest independent pass: `compile-evidence-20260813-142059-final.log`.
 - Final indicator compile result: `0 errors, 0 warnings`.
-- Latest harness compile logs include `compile-goal2-20260813-133756-runtime-harness.log`, `compile-goal2-20260813-133756-deep-harness.log`, `compile-goal2-20260813-133756-chart-harness.log`, `compile-goal2-20260813-133756-mtf-harness.log`, `compile-goal2-20260813-133756-adversarial-harness.log`, and `compile-goal2-20260813-133756-modes-harness.log`; all report `0 errors, 0 warnings`.
-- Latest Strategy Tester evidence: `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`, run window `2026-08-13 13:39-13:41`.
+- Latest harness compile logs include `compile-evidence-20260813-142059-runtime-harness.log`, `compile-evidence-20260813-142059-deep-harness.log`, `compile-evidence-20260813-142059-chart-harness.log`, `compile-evidence-20260813-142059-mtf-harness.log`, `compile-evidence-20260813-142059-adversarial-harness.log`, and `compile-evidence-20260813-142059-modes-harness.log`; all report `0 errors, 0 warnings`.
+- Latest Strategy Tester evidence: `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`, run window `2026-08-13 14:26-14:28`.
 - Adversarial full-history / anti-repaint harness: `OnTester result 1`, `failures=0`, `deep_bars=8437`, `oldest_shift=8387`, `mid_shift=4193`, `anti_repaint=true`.
 - MTF causality harness: `OnTester result 1`, `failures=0`, `samples=234`.
 - Chart-object semantic harness: `OnTester result 1`, `failures=0`, `objects_seen=true`, semantic validation passed with `count=121`.
@@ -49,7 +49,7 @@ This workspace contains a pure MQL5, non-trading MetaTrader 5 custom indicator i
 ## Remaining Limits
 
 - `Deep Learning` and the Multi-Scale component of `Hybrid` remain open specification gaps.
-- Sparse history fingerprinting detects history extension and selected old-history checkpoint changes, but not every possible arbitrary broker-side revision inside unsampled history.
+- Arbitrary closed-bar history revisions are covered by per-bar fingerprints and a bounded background sweep; detection is progressive rather than an immediate full-history scan on every ordinary tick.
 - AR-Ridge remains intentionally low-dimensional and bounded for MQL5 tick safety; it is not a claim of statistical superiority.
 - No trading, Python, WebRequest, DLL import, external model server, or external API dependency is used.
 

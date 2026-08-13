@@ -99,6 +99,49 @@ double DSA_DataQualityScore(const int index,
    return DSA_Clamp(score,0.0,100.0);
 }
 
+double DSA_RevisionHashMix(const double hash,const double value)
+{
+   double safe_value = value;
+   if(!MathIsValidNumber(safe_value))
+      safe_value = 0.0;
+
+   safe_value = MathMod(MathAbs(safe_value),1000000007.0);
+   return MathMod(hash * 4099.0 + safe_value + 17.0,2000000000.0);
+}
+
+double DSA_RevisionPriceValue(const double value)
+{
+   if(!MathIsValidNumber(value))
+      return 0.0;
+
+   const double point = MathMax(_Point,1.0e-10);
+   return MathRound(value / point);
+}
+
+double DSA_BarRevisionFingerprint(const int index,
+                                  const int rates_total,
+                                  const datetime &time[],
+                                  const double &open[],
+                                  const double &high[],
+                                  const double &low[],
+                                  const double &close[],
+                                  const long &tick_volume[],
+                                  const int &spread[])
+{
+   if(index < 0 || index >= rates_total)
+      return EMPTY_VALUE;
+
+   double hash = 166136261.0;
+   hash = DSA_RevisionHashMix(hash,(double)(long)time[index]);
+   hash = DSA_RevisionHashMix(hash,DSA_RevisionPriceValue(open[index]));
+   hash = DSA_RevisionHashMix(hash,DSA_RevisionPriceValue(high[index]));
+   hash = DSA_RevisionHashMix(hash,DSA_RevisionPriceValue(low[index]));
+   hash = DSA_RevisionHashMix(hash,DSA_RevisionPriceValue(close[index]));
+   hash = DSA_RevisionHashMix(hash,(double)tick_volume[index]);
+   hash = DSA_RevisionHashMix(hash,(double)spread[index]);
+   return hash + 1.0;
+}
+
 string DSA_HistoryFingerprint(const int rates_total,const datetime &time[])
 {
    if(rates_total <= 0)

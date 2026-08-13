@@ -47,14 +47,14 @@
 | All official Model Mode values attach | PASS | `DSA_ModelModeHarness`, all six modes true |
 | Deep Learning implementation | SPECIFICATION GAP | undefined Multi-Scale Sequence Expert; neural approximation removed |
 | Hybrid Multi-Scale component | SPECIFICATION GAP | undefined Multi-Scale Ensemble; statistical/ridge subset remains |
-| Arbitrary unsampled history revision detection | PARTIAL | sparse history fingerprint, progressive rebuild on detected revision |
+| Arbitrary unsampled history revision detection | PASS | `CalcBarFingerprint`, `DSA_BarRevisionFingerprint`, bounded `DSA_AuditHistoricalRevisionSlice` sweep |
 | Predictive accuracy / profitability | NOT APPLICABLE | explicitly outside scope |
 
 ## Fresh Evidence
 
-- Final compile: `compile-goal2-20260813-133756-final.log`, `0 errors, 0 warnings`.
-- Harness compiles: `compile-goal2-20260813-133756-*-harness.log`, all `0 errors, 0 warnings`.
-- Latest Strategy Tester run window: `2026-08-13 13:39-13:41` in `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`.
+- Final compile: `compile-evidence-20260813-142059-final.log`, `0 errors, 0 warnings`.
+- Harness compiles: `compile-evidence-20260813-142059-*-harness.log`, all `0 errors, 0 warnings`.
+- Latest Strategy Tester run window: `2026-08-13 14:26-14:28` in `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`.
 - Adversarial full-history and anti-repaint runtime: `OnTester result 1`, `failures=0`, `deep_bars=8437`.
 - MTF causality runtime: `OnTester result 1`, `failures=0`, `samples=234`.
 - Future object semantic runtime: `OnTester result 1`, `failures=0`, `count=121`.
@@ -63,3 +63,5 @@
 ## Audit Conclusion
 
 Most implementable Catalog requirements now have static and runtime evidence. The project must not be marked production-ready while Deep Learning / Multi-Scale behavior remains undefined by the Catalog.
+
+The remaining history-audit constraint is latency, not coverage: arbitrary closed-bar revisions are detected by a rotating bounded sweep instead of a full-history scan on every ordinary tick.

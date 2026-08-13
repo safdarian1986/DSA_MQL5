@@ -18,8 +18,8 @@
 
 | Requirement | Status | Evidence |
 | --- | --- | --- |
-| Indicator compiles from final source | PASS | `compile-goal2-20260813-133756-final.log`, `0 errors, 0 warnings` |
-| Harnesses compile | PASS | `compile-goal2-20260813-133756-*-harness.log`, all `0 errors, 0 warnings` |
+| Indicator compiles from final source | PASS | `compile-evidence-20260813-142059-final.log`, `0 errors, 0 warnings` |
+| Harnesses compile | PASS | `compile-evidence-20260813-142059-*-harness.log`, all `0 errors, 0 warnings` |
 | Pure MQL5 / no external dependencies | PASS | static source scan |
 | Non-trading behavior | PASS | static source scan |
 | Exactly 10 inputs | PASS | `DSA_MQL5_Native.mq5` |
@@ -32,11 +32,11 @@
 | All Model Mode enum values attach | PASS | model-mode harness all six modes true |
 | Deep Learning / Multi-Scale Sequence Expert | SPECIFICATION GAP | Catalog names it but does not define implementable architecture |
 | Hybrid Multi-Scale component | SPECIFICATION GAP | undefined Multi-Scale Ensemble component |
-| Arbitrary unsampled history revision detection | PARTIAL | sparse stable history checkpoints only |
+| Arbitrary unsampled history revision detection | PASS | per-bar OHLC/time/volume/spread fingerprints plus bounded background audit |
 
 ## Runtime Evidence
 
-- Latest Strategy Tester run window: `2026-08-13 13:39-13:41` in `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`.
+- Latest Strategy Tester run window: `2026-08-13 14:26-14:28` in `C:\Users\ariapars\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075\Tester\logs\20260813.log`.
 - Adversarial harness: `OnTester result 1`, `failures=0`, `deep_bars=8437`, `full_history=true`, `buffer_semantics=true`, `anti_repaint=true`.
 - MTF harness: `OnTester result 1`, `failures=0`, `samples=234`.
 - Chart-object harness: `OnTester result 1`, `failures=0`, semantic validation passed, `count=121`.
@@ -49,3 +49,5 @@
 Readiness status: `BLOCKED BY SPECIFICATION GAP`.
 
 The current workspace is compiled, non-trading, and substantially validated. It is not production-ready because the official `Deep Learning` / `Hybrid` model-mode contract cannot be completed without inventing the missing Multi-Scale Sequence Expert specification.
+
+All implementable non-neural Catalog requirements audited in this pass are now either `PASS` or outside scope. The history-revision audit is intentionally progressive: old closed bars are swept in bounded slices rather than by performing a full-history scan on every ordinary tick.

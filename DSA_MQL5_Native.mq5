@@ -2,7 +2,7 @@
 #property link      ""
 #property version   "1.00"
 #property indicator_chart_window
-#property indicator_buffers 29
+#property indicator_buffers 30
 #property indicator_plots   10
 #property tester_everytick_calculate
 
@@ -108,6 +108,7 @@ double CalcForecastH4[];
 double CalcForecastH8[];
 double CalcHorizonGrowth[];
 double CalcRidgeState[];
+double CalcBarFingerprint[];
 
 DSARuntimeSchedulerState RuntimeState;
 DSAInputContract InputContract;
@@ -159,6 +160,7 @@ bool DSA_MapBuffers()
    ok = ok && SetIndexBuffer(26,CalcForecastH8,INDICATOR_CALCULATIONS);
    ok = ok && SetIndexBuffer(27,CalcHorizonGrowth,INDICATOR_CALCULATIONS);
    ok = ok && SetIndexBuffer(28,CalcRidgeState,INDICATOR_CALCULATIONS);
+   ok = ok && SetIndexBuffer(29,CalcBarFingerprint,INDICATOR_CALCULATIONS);
 
    ArraySetAsSeries(BufferAdaptiveTrend,true);
    ArraySetAsSeries(BufferSignal,true);
@@ -189,6 +191,7 @@ bool DSA_MapBuffers()
    ArraySetAsSeries(CalcForecastH8,true);
    ArraySetAsSeries(CalcHorizonGrowth,true);
    ArraySetAsSeries(CalcRidgeState,true);
+   ArraySetAsSeries(CalcBarFingerprint,true);
    return ok;
 }
 
@@ -223,6 +226,7 @@ void DSA_ResetBuffers()
    ArrayInitialize(CalcForecastH8,EMPTY_VALUE);
    ArrayInitialize(CalcHorizonGrowth,EMPTY_VALUE);
    ArrayInitialize(CalcRidgeState,EMPTY_VALUE);
+   ArrayInitialize(CalcBarFingerprint,EMPTY_VALUE);
 }
 
 void DSA_ProcessBar(const int index,
@@ -277,6 +281,7 @@ void DSA_ProcessBar(const int index,
    CalcForecastH8[index] = DSA_ProjectForecastPath(model.central_forecast,model.kalman_slope,8);
    CalcHorizonGrowth[index] = model.horizon_growth;
    CalcRidgeState[index] = model.ridge_forecast;
+   CalcBarFingerprint[index] = DSA_BarRevisionFingerprint(index,rates_total,time,open,high,low,close,tick_volume,spread);
 
    if(live_bar && adaptive.recalibration_required && RuntimeState.build_complete)
    {
@@ -347,6 +352,57 @@ void DSA_ProcessHistoricalSlice(const int rates_total,
 
    if(RuntimeState.build_cursor < 1)
       DSA_MarkBuildComplete(RuntimeState);
+}
+
+bool DSA_AuditHistoricalRevisionSlice(const int rates_total,
+                                      const string history_fingerprint,
+                                      const datetime &time[],
+                                      const double &open[],
+                                      const double &high[],
+                                      const double &low[],
+                                      const double &close[],
+                                      const long &tick_volume[],
+                                      const int &spread[])
+{
+   if(!RuntimeState.build_complete || RuntimeState.rebuild_pending || rates_total < 3)
+      return false;
+   if(RuntimeState.runtime_load > 0.90)
+      return false;
+
+   int cursor = RuntimeState.history_audit_cursor;
+   if(cursor < 1 || cursor >= rates_total)
+      cursor = rates_total - 1;
+
+   int budget = DSA_WorkBudgetBars(RuntimeState,rates_total) / 12;
+   if(budget < 8)
+      budget = 8;
+   if(budget > 128)
+      budget = 128;
+
+   int checked = 0;
+   while(cursor >= 1 && checked < budget)
+   {
+      const double stored = CalcBarFingerprint[cursor];
+      if(DSA_HasValue(stored))
+      {
+         const double current = DSA_BarRevisionFingerprint(cursor,rates_total,time,open,high,low,close,tick_volume,spread);
+         if(MathAbs(stored - current) > 0.5)
+         {
+            DSA_CoalesceTrigger(RuntimeState,DSA_REASON_HISTORY_REVISION);
+            DSA_ResetBuffers();
+            DSA_StartProgressiveBuild(RuntimeState,rates_total,InputContract.fingerprint,history_fingerprint);
+            return true;
+         }
+      }
+
+      --cursor;
+      ++checked;
+   }
+
+   if(cursor < 1)
+      cursor = rates_total - 1;
+   RuntimeState.history_audit_cursor = cursor;
+   return false;
 }
 
 void DSA_ProcessLivePath(const int rates_total,
@@ -450,7 +506,9 @@ int OnCalculate(const int rates_total,
    }
 
    DSA_ProcessLivePath(rates_total,time,open,high,low,close,tick_volume,spread);
-   if(RuntimeState.build_complete && RuntimeState.recalibration_pending && RuntimeState.runtime_load < 0.85)
+   const bool revision_detected = DSA_AuditHistoricalRevisionSlice(rates_total,history_fingerprint,
+                                                                   time,open,high,low,close,tick_volume,spread);
+   if(!revision_detected && RuntimeState.build_complete && RuntimeState.recalibration_pending && RuntimeState.runtime_load < 0.85)
       DSA_ProcessAdaptiveJobSlice(AdaptiveJob,AdaptiveTuning,RuntimeState,rates_total,
                                   CalcAbsoluteError,CalcConformalRadius,
                                   CalcModelScore,CalcDisagreement,CalcStressScore);

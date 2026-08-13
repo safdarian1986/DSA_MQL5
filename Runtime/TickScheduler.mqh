@@ -28,6 +28,7 @@ struct DSARuntimeSchedulerState
    string history_fingerprint;
    int build_cursor;
    int build_total;
+   int history_audit_cursor;
    int processed_count;
    bool build_complete;
    double ew_latency_ms;
@@ -51,6 +52,7 @@ void DSA_RuntimeInit(DSARuntimeSchedulerState &runtime)
    runtime.history_fingerprint = "";
    runtime.build_cursor = -1;
    runtime.build_total = 0;
+   runtime.history_audit_cursor = -1;
    runtime.processed_count = 0;
    runtime.build_complete = false;
    runtime.ew_latency_ms = 0.0;
@@ -119,6 +121,7 @@ void DSA_StartProgressiveBuild(DSARuntimeSchedulerState &runtime,const int rates
    runtime.rebuild_pending = true;
    runtime.build_complete = false;
    runtime.build_total = rates_total;
+   runtime.history_audit_cursor = rates_total - 1;
    runtime.processed_count = 0;
    runtime.build_cursor = rates_total - 1;
    runtime.active_state_version++;
@@ -142,6 +145,7 @@ void DSA_MarkBuildComplete(DSARuntimeSchedulerState &runtime)
    runtime.build_complete = true;
    runtime.rebuild_pending = false;
    runtime.heavy_task_active = false;
+   runtime.history_audit_cursor = MathMax(runtime.build_total - 1,1);
    runtime.pending_reason_mask = DSA_REASON_NONE;
    runtime.status = DSA_STATUS_READY;
 }
